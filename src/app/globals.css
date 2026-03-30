@@ -1,0 +1,347 @@
+@import "tailwindcss";
+
+/* =====================================================
+   WOOTIENDA — Design System
+   ===================================================== */
+
+/* === Tailwind v4 Theme Configuration === */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --font-sans: var(--font-plus-jakarta);
+}
+
+/* === LIGHT MODE === */
+:root {
+  --background: #ffffff;
+  --foreground: #000000;
+
+  --card: #f9f7f5;
+  --card-foreground: #2a2a2a;
+
+  --popover: #ffffff;
+  --popover-foreground: #2a2a2a;
+
+  --primary: #ee1d6d;
+  --primary-foreground: #ffffff;
+
+  --secondary: #efebe8;
+  --secondary-foreground: #2a2a2a;
+
+  --muted: #f0eeec;
+  --muted-foreground: #737373;
+
+  --accent: #feda00;
+  --accent-foreground: #000000;
+
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+
+  --success: #16a34a;
+  --success-foreground: #ffffff;
+
+  --warning: #feda00;
+  --warning-foreground: #000000;
+
+  --border: #e8e4e0;
+  --input: #e8e4e0;
+  --ring: #ee1d6d;
+
+  --radius: 0.75rem;
+}
+
+/* === DARK MODE === */
+.dark {
+  --background: #121212;
+  --foreground: #f2f2f2;
+
+  --card: #1c1c1c;
+  --card-foreground: #f2f2f2;
+
+  --popover: #1c1c1c;
+  --popover-foreground: #f2f2f2;
+
+  --primary: #f23d7f;
+  --primary-foreground: #ffffff;
+
+  --secondary: #262626;
+  --secondary-foreground: #e0e0e0;
+
+  --muted: #262626;
+  --muted-foreground: #999999;
+
+  --accent: #ffe01a;
+  --accent-foreground: #000000;
+
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+
+  --success: #4ade80;
+  --success-foreground: #000000;
+
+  --warning: #ffe01a;
+  --warning-foreground: #000000;
+
+  --border: #2e2e2e;
+  --input: #2e2e2e;
+  --ring: #f23d7f;
+}
+
+/* === BASE STYLES === */
+* {
+  border-color: var(--border);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-plus-jakarta), system-ui, sans-serif;
+}
+
+/* === BRAND SHADOWS === */
+:root {
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.10), 0 4px 8px rgba(0, 0, 0, 0.06);
+  --shadow-xl: 0 20px 50px rgba(0, 0, 0, 0.12), 0 8px 16px rgba(0, 0, 0, 0.08);
+  --shadow-pink: 0 8px 25px rgba(238, 29, 109, 0.20);
+  --shadow-pink-lg: 0 15px 40px rgba(238, 29, 109, 0.25);
+  --shadow-gold: 0 8px 25px rgba(254, 218, 0, 0.20);
+}
+
+/* === GLASSMORPHISM UTILITIES === */
+.glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+.dark .glass {
+  background: rgba(0, 0, 0, 0.4);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.glass-strong {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+.dark .glass-strong {
+  background: rgba(0, 0, 0, 0.6);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.glass-pink {
+  background: rgba(238, 29, 109, 0.05);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(238, 29, 109, 0.1);
+}
+.dark .glass-pink {
+  background: rgba(238, 29, 109, 0.1);
+}
+
+/* === GRADIENT UTILITIES === */
+.gradient-brand {
+  background: linear-gradient(135deg, #ee1d6d 0%, #c2185b 50%, #880e4f 100%);
+}
+
+.gradient-brand-warm {
+  background: linear-gradient(135deg, #ee1d6d 0%, #ff6b9d 40%, #feda00 100%);
+}
+
+.gradient-ai {
+  background: linear-gradient(135deg, #ee1d6d 0%, #9c27b0 50%, #7b1fa2 100%);
+}
+
+.gradient-premium {
+  background: linear-gradient(135deg, #2a2a2a 0%, #1a1a2e 50%, #16213e 100%);
+}
+
+.gradient-gold {
+  background: linear-gradient(135deg, #feda00 0%, #ffb300 50%, #ff8f00 100%);
+}
+
+.gradient-mesh {
+  background:
+    radial-gradient(ellipse at 20% 50%, rgba(238, 29, 109, 0.15) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(254, 218, 0, 0.10) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 80%, rgba(238, 29, 109, 0.08) 0%, transparent 50%);
+}
+
+/* === TEXT GRADIENTS === */
+.text-gradient-brand {
+  background-image: linear-gradient(135deg, #ee1d6d 0%, #feda00 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.text-gradient-pink {
+  background-image: linear-gradient(135deg, #ee1d6d 0%, #f23d7f 50%, #ff6b9d 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* === ANIMATIONS === */
+
+/* Pulse pink — for important CTAs */
+.pulse-pink {
+  animation: pulse-pink 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+@keyframes pulse-pink {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(238, 29, 109, 0.4); }
+  50% { box-shadow: 0 0 0 12px rgba(238, 29, 109, 0); }
+}
+
+/* Glow gold — for PRO badges */
+.glow-gold {
+  animation: glow-gold 3s ease-in-out infinite alternate;
+}
+@keyframes glow-gold {
+  from { box-shadow: 0 0 5px rgba(254, 218, 0, 0.3); }
+  to { box-shadow: 0 0 20px rgba(254, 218, 0, 0.5); }
+}
+
+/* Shimmer — for loading skeletons */
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(239, 235, 232, 0.3) 0%,
+    rgba(239, 235, 232, 0.6) 50%,
+    rgba(239, 235, 232, 0.3) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Gradient shift — for hero backgrounds */
+.gradient-animate {
+  background-size: 200% 200%;
+  animation: gradient-shift 8s ease infinite;
+}
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Float — for decorative elements */
+.float {
+  animation: float 6s ease-in-out infinite;
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+}
+
+/* Spin slow — for decorative elements */
+.spin-slow {
+  animation: spin-slow 20s linear infinite;
+}
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* === HOVER UTILITIES === */
+
+/* Link with animated underline */
+.link-underline {
+  position: relative;
+}
+.link-underline::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: var(--primary);
+  transition: width 0.3s ease-out;
+}
+.link-underline:hover::after {
+  width: 100%;
+}
+
+/* === INPUT FOCUS === */
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(238, 29, 109, 0.1);
+  transition: all 0.2s ease;
+}
+
+/* === ACCESSIBILITY === */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* === SCROLLBAR STYLING === */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--muted-foreground);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: #444;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
+/* === SELECTION === */
+::selection {
+  background: rgba(238, 29, 109, 0.2);
+  color: inherit;
+}
