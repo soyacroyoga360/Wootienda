@@ -244,7 +244,7 @@ export default async function BusinessLandingPage({ params }: PageProps) {
                 type="text" 
                 placeholder="Buscar productos..." 
                 className="w-full pl-9 pr-4 py-2 rounded-full border border-border bg-card text-sm focus:outline-none focus:ring-2 transition-shadow"
-                style={{ '--tw-ring-color': `${business.primary_color}30` } as any}
+                style={{ '--tw-ring-color': `${business.primary_color}30` } as React.CSSProperties}
               />
             </div>
           </div>
