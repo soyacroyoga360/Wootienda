@@ -28,6 +28,15 @@ yarn-error.log*
 .env*.local
 !.env.example
 
+# local VPS/deploy notes and SSH material (NEVER commit server access data)
+docs/vps-deploy-private.md
+docs/*private*.md
+*.key
+*.pub
+.ssh/
+deploy.env
+deploy.*.env
+
 # vercel
 .vercel
 

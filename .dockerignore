@@ -1,0 +1,15 @@
+.git
+.next
+node_modules
+coverage
+Dockerfile
+docker-compose*.yml
+.env
+.env.*
+!.env.docker.example
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+eslint-output.txt
+eslint.json
