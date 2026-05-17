@@ -4,10 +4,13 @@ import path from "node:path"
 export type BlogPost = {
   slug: string
   title: string
+  seoTitle: string
   description: string
   date: string
+  modifiedDate: string
   author: string
   category: string
+  keywords: string[]
   coverImage: string
   published: boolean
   content: string
@@ -58,10 +61,16 @@ export function getAllBlogPosts({ includeDrafts = false } = {}) {
       return {
         slug,
         title: metadata.title ?? slug,
+        seoTitle: metadata.seoTitle ?? metadata.title ?? slug,
         description: metadata.description ?? "",
         date: metadata.date ?? "",
+        modifiedDate: metadata.modifiedDate ?? metadata.date ?? "",
         author: metadata.author ?? "Equipo Wootienda",
         category: metadata.category ?? "Blog",
+        keywords: (metadata.keywords ?? "")
+          .split(",")
+          .map((keyword) => keyword.trim())
+          .filter(Boolean),
         coverImage: metadata.coverImage ?? "https://images.unsplash.com/photo-1483058712412-4245e9b90334?q=80&w=1600&auto=format&fit=crop",
         published: metadata.published !== "false",
         content,
@@ -90,7 +99,8 @@ function renderInline(value: string) {
 }
 
 export function markdownToHtml(markdown: string) {
-  const blocks = markdown.split(/\n{2,}/)
+  const blocks = markdown.split(/\r?\n\s*\r?\n/)
+  let skippedDocumentTitle = false
 
   return blocks
     .map((block) => {
@@ -106,18 +116,25 @@ export function markdownToHtml(markdown: string) {
       }
 
       if (trimmed.startsWith("# ")) {
+        if (!skippedDocumentTitle) {
+          skippedDocumentTitle = true
+          return ""
+        }
+
         return `<h1>${renderInline(trimmed.slice(2))}</h1>`
       }
 
-      if (trimmed.split("\n").every((line) => line.startsWith("- "))) {
+      const lines = trimmed.split(/\r?\n/)
+
+      if (lines.every((line) => line.startsWith("- "))) {
         const items = trimmed
-          .split("\n")
+          .split(/\r?\n/)
           .map((line) => `<li>${renderInline(line.slice(2).trim())}</li>`)
           .join("")
         return `<ul>${items}</ul>`
       }
 
-      return `<p>${renderInline(trimmed).replace(/\n/g, "<br />")}</p>`
+      return `<p>${renderInline(trimmed).replace(/\r?\n/g, "<br />")}</p>`
     })
     .join("\n")
 }
