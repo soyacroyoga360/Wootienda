@@ -54,11 +54,19 @@ const navItems = [
   },
 ]
 
-export function DashboardSidebar() {
+interface DashboardSidebarProps {
+  initialSlug?: string
+}
+
+export function DashboardSidebar({ initialSlug = "cafe-sierra" }: DashboardSidebarProps) {
   const pathname = usePathname()
   const [isOpen, setIsOpen] = useState(false)
-  const [businessSlug, setBusinessSlug] = useState<string>("cafe-sierra")
+  const [businessSlug, setBusinessSlug] = useState<string>(initialSlug)
   const supabase = createClient()
+
+  useEffect(() => {
+    setBusinessSlug(initialSlug)
+  }, [initialSlug])
 
   useEffect(() => {
     async function getSlug() {
@@ -79,8 +87,10 @@ export function DashboardSidebar() {
         console.error("Error fetching business slug:", err)
       }
     }
-    getSlug()
-  }, [supabase])
+    if (businessSlug === "cafe-sierra") {
+      getSlug()
+    }
+  }, [supabase, businessSlug])
 
   return (
     <>
