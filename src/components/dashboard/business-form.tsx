@@ -1,9 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
+import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -47,11 +48,13 @@ type BusinessFormData = z.infer<typeof businessSchema>
 
 export function BusinessForm() {
   const [isLoading, setIsLoading] = useState(false)
+  const supabase = createClient()
 
   const {
     register,
     handleSubmit,
     formState: { errors, isDirty },
+    reset,
   } = useForm<BusinessFormData>({
     resolver: zodResolver(businessSchema),
     defaultValues: {
@@ -73,14 +76,151 @@ export function BusinessForm() {
     },
   })
 
+  // Format helper for dynamic slug creation in case it's needed
+  const formatSlug = (value: string) =>
+    value
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, "-")
+      .replace(/[^a-z0-9-]/g, "")
+
+  useEffect(() => {
+    async function loadBusinessData() {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return
+
+        // Fetch business
+        const { data: business } = await supabase
+          .from("businesses")
+          .select("*")
+          .eq("user_id", user.id)
+          .maybeSingle()
+
+        if (business) {
+          // Fetch social links
+          const { data: socials } = await supabase
+            .from("social_links")
+            .select("*")
+            .eq("business_id", business.id)
+
+          const socialMap: Record<string, string> = {}
+          socials?.forEach((s) => {
+            socialMap[s.platform] = s.url
+          })
+
+          reset({
+            name: business.business_name || "",
+            description: business.description || "",
+            phone: business.phone || "",
+            email: business.email || "",
+            website: business.website || "",
+            address: business.address || "",
+            city: business.city || "",
+            country: business.country || "",
+            schedule: business.schedule || "",
+            whatsapp: business.whatsapp || "",
+            instagram: socialMap["instagram"] || "",
+            facebook: socialMap["facebook"] || "",
+            twitter: socialMap["twitter"] || socialMap["x"] || "",
+            youtube: socialMap["youtube"] || "",
+            telegram: socialMap["telegram"] || "",
+          })
+        }
+      } catch (err) {
+        console.error("Error loading business data:", err)
+      }
+    }
+    loadBusinessData()
+  }, [supabase, reset])
+
   async function onSubmit(data: BusinessFormData) {
     setIsLoading(true)
     try {
-      // TODO: Save to Supabase
-      console.log("Business data:", data)
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error("No autenticado")
+
+      // 1. Get or create business
+      let { data: business } = await supabase
+        .from("businesses")
+        .select("id")
+        .eq("user_id", user.id)
+        .maybeSingle()
+
+      if (!business) {
+        const generatedSlug = formatSlug(data.name || "mi-negocio")
+        const { data: newBusiness, error: insertError } = await supabase
+          .from("businesses")
+          .insert({
+            user_id: user.id,
+            slug: generatedSlug,
+            business_name: data.name,
+            description: data.description,
+            phone: data.phone,
+            email: data.email,
+            website: data.website,
+            address: data.address,
+            city: data.city,
+            country: data.country,
+            schedule: data.schedule,
+            whatsapp: data.whatsapp,
+          })
+          .select("id")
+          .single()
+
+        if (insertError) throw insertError
+        business = newBusiness
+      } else {
+        const { error: updateError } = await supabase
+          .from("businesses")
+          .update({
+            business_name: data.name,
+            description: data.description,
+            phone: data.phone,
+            email: data.email,
+            website: data.website,
+            address: data.address,
+            city: data.city,
+            country: data.country,
+            schedule: data.schedule,
+            whatsapp: data.whatsapp,
+          })
+          .eq("id", business.id)
+
+        if (updateError) throw updateError
+      }
+
+      if (business) {
+        // 2. Save social links
+        const platforms = ["instagram", "facebook", "twitter", "youtube", "telegram"]
+        for (const platform of platforms) {
+          const urlValue = data[platform as keyof BusinessFormData]
+          if (urlValue && urlValue.trim() !== "") {
+            const { error: upsertError } = await supabase
+              .from("social_links")
+              .upsert({
+                business_id: business.id,
+                platform,
+                url: urlValue.trim(),
+              }, {
+                onConflict: "business_id, platform"
+              })
+            if (upsertError) throw upsertError
+          } else {
+            await supabase
+              .from("social_links")
+              .delete()
+              .eq("business_id", business.id)
+              .eq("platform", platform)
+          }
+        }
+      }
+
       toast.success("Negocio actualizado correctamente")
-    } catch {
-      toast.error("Error al guardar. Intenta de nuevo.")
+      reset(data)
+    } catch (err: any) {
+      console.error("Error saving business details:", err)
+      toast.error(`Error al guardar: ${err.message || "Intenta de nuevo."}`)
     } finally {
       setIsLoading(false)
     }

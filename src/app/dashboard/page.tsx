@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { createClient } from "@/lib/supabase/server"
 import {
   Store,
   Package,
@@ -9,9 +10,62 @@ import {
   ArrowRight,
   Sparkles,
   AlertCircle,
+  Crown,
+  Settings,
 } from "lucide-react"
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  let business = null
+  let productCount = 0
+  let stats = { total_views: 0, unique_visitors: 0, contact_clicks: 0 }
+  let userPlan = "free"
+
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (user) {
+      // 1. Fetch business details
+      const { data: dbBusiness } = await supabase
+        .from("businesses")
+        .select("*")
+        .eq("user_id", user.id)
+        .maybeSingle()
+
+      if (dbBusiness) {
+        business = dbBusiness
+        userPlan = dbBusiness.plan || "free"
+
+        // 2. Fetch product count
+        const { count } = await supabase
+          .from("products")
+          .select("*", { count: "exact", head: true })
+          .eq("business_id", dbBusiness.id)
+        productCount = count || 0
+
+        // 3. Fetch latest stats
+        const { data: dbStats } = await supabase
+          .from("business_stats")
+          .select("total_views, unique_visitors, contact_clicks")
+          .eq("business_id", dbBusiness.id)
+          .order("year", { ascending: false })
+          .order("month", { ascending: false })
+          .limit(1)
+          .maybeSingle()
+
+        if (dbStats) {
+          stats = {
+            total_views: dbStats.total_views || 0,
+            unique_visitors: dbStats.unique_visitors || 0,
+            contact_clicks: dbStats.contact_clicks || 0,
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.error("Error loading dashboard data:", err)
+  }
+
   const quickActions = [
     {
       title: "Mi Negocio",
@@ -36,61 +90,104 @@ export default function DashboardPage() {
     },
   ]
 
-  const stats = [
+  const statsList = [
     {
       label: "Visitas",
-      value: "0",
+      value: stats.total_views.toString(),
       icon: Eye,
-      change: null,
     },
     {
       label: "Productos",
-      value: "0",
+      value: productCount.toString(),
       icon: ShoppingBag,
-      change: null,
     },
     {
-      label: "Impresiones",
-      value: "0",
+      label: "Clics de contacto",
+      value: stats.contact_clicks.toString(),
       icon: TrendingUp,
-      change: null,
     },
   ]
 
   return (
     <>
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight mb-1">Dashboard</h1>
-        <p className="text-muted-foreground">
-          Bienvenido a tu panel de administración
-        </p>
-      </div>
-
-      {/* Alert — setup needed */}
-      <div className="flex items-start gap-3 p-4 rounded-xl bg-primary/5 border border-primary/20 mb-8">
-        <AlertCircle className="size-5 text-primary mt-0.5 shrink-0" />
+      <div className="mb-8 flex items-center justify-between">
         <div>
-          <p className="text-sm font-medium">Completa la configuración de tu negocio</p>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            Agrega los datos de tu negocio, sube productos y personaliza tu landing para activar tu tienda.
+          <h1 className="text-3xl font-bold tracking-tight mb-1">Dashboard</h1>
+          <p className="text-muted-foreground">
+            Bienvenido a tu panel de administración, <span className="font-semibold text-foreground">{business?.business_name || "Comerciante"}</span>
           </p>
-          <Link
-            href="/dashboard/business"
-            className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline mt-2"
-          >
-            Configurar ahora
-            <ArrowRight className="size-3.5" />
-          </Link>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
+            userPlan === "pro" 
+              ? "bg-amber-500/10 text-amber-600 border border-amber-500/20 shadow-sm"
+              : userPlan === "business"
+              ? "bg-violet-500/10 text-violet-600 border border-violet-500/20 shadow-sm"
+              : "bg-secondary text-muted-foreground"
+          }`}>
+            {(userPlan === "pro" || userPlan === "business") && <Crown className="size-3.5" />}
+            Plan {userPlan}
+          </span>
         </div>
       </div>
 
+      {/* Plan-specific premium box */}
+      {userPlan === "free" ? (
+        <div className="flex items-start gap-4 p-5 rounded-2xl bg-gradient-to-r from-primary/10 via-primary/5 to-accent/5 border border-primary/20 mb-8 shadow-sm">
+          <Crown className="size-6 text-primary shrink-0 mt-0.5 animate-pulse" />
+          <div className="flex-1">
+            <p className="font-semibold text-foreground">Actualiza a Wootienda PRO</p>
+            <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
+              Desbloquea plantillas de diseño glassmorphic y neon, conecta tu propio dominio personalizado y obtén capacidades de generación de contenido por Inteligencia Artificial ilimitadas.
+            </p>
+            <Link
+              href="/dashboard/settings"
+              className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline mt-3"
+            >
+              Ver planes de actualización
+              <ArrowRight className="size-4" />
+            </Link>
+          </div>
+        </div>
+      ) : (
+        <div className="flex items-start gap-4 p-5 rounded-2xl bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-accent/5 border border-amber-500/20 mb-8 shadow-sm">
+          <Crown className="size-6 text-amber-600 shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="font-semibold text-foreground">¡Disfrutas de características PRO activadas!</p>
+            <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
+              Tienes acceso a todos los temas exclusivos de apariencia, analíticas detalladas y control completo del catálogo. Recuerda configurar tu dominio personalizado en la pestaña de configuración.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Alert — setup needed */}
+      {(!business?.phone || !business?.description) && (
+        <div className="flex items-start gap-3 p-4 rounded-xl bg-primary/5 border border-primary/20 mb-8">
+          <AlertCircle className="size-5 text-primary mt-0.5 shrink-0" />
+          <div>
+            <p className="text-sm font-medium">Completa la configuración de tu negocio</p>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              Agrega los datos de tu negocio, sube productos y personaliza tu landing para activar tu tienda.
+            </p>
+            <Link
+              href="/dashboard/business"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline mt-2"
+            >
+              Configurar ahora
+              <ArrowRight className="size-3.5" />
+            </Link>
+          </div>
+        </div>
+      )}
+
       {/* Stats grid */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-        {stats.map((stat) => (
+        {statsList.map((stat) => (
           <div
             key={stat.label}
-            className="bg-card rounded-2xl border border-border/50 p-5"
+            className="bg-card rounded-2xl border border-border/50 p-5 hover:shadow-md transition-shadow duration-200"
           >
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm text-muted-foreground">{stat.label}</span>
@@ -147,3 +244,4 @@ export default function DashboardPage() {
     </>
   )
 }
+
