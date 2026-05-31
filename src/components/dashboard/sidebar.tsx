@@ -2,7 +2,8 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { createClient } from "@/lib/supabase/client"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Logo } from "@/components/shared/logo"
@@ -56,6 +57,30 @@ const navItems = [
 export function DashboardSidebar() {
   const pathname = usePathname()
   const [isOpen, setIsOpen] = useState(false)
+  const [businessSlug, setBusinessSlug] = useState<string>("cafe-sierra")
+  const supabase = createClient()
+
+  useEffect(() => {
+    async function getSlug() {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) {
+          const { data: business } = await supabase
+            .from("businesses")
+            .select("slug")
+            .eq("user_id", user.id)
+            .maybeSingle()
+          
+          if (business?.slug) {
+            setBusinessSlug(business.slug)
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching business slug:", err)
+      }
+    }
+    getSlug()
+  }, [supabase])
 
   return (
     <>
@@ -122,7 +147,7 @@ export function DashboardSidebar() {
         {/* Bottom section */}
         <div className="px-3 py-4 border-t border-border space-y-1">
           <Link
-            href="/cafe-sierra"
+            href={`/${businessSlug}`}
             target="_blank"
             className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground transition-all duration-200"
           >
