@@ -135,6 +135,8 @@ Plataforma tipo directorio de negocios con URLs personalizadas estilo Linktree, 
 
 ---
 
+1. siempre al implementar hacer git commit y push a la rama main si hay cambios de misw compañeros has pull y luego sube mis cambios 
+
 ## 10. Roadmap de Producto (Fases)
 
 ### Fase 1 — MVP (actual)

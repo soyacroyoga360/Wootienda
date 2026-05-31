@@ -1,5 +1,6 @@
 import { Header } from "@/components/shared/header"
 import { Logo } from "@/components/shared/logo"
+import { PricingSection } from "@/components/marketing/pricing-section"
 import Link from "next/link"
 import {
   Palette,
@@ -171,6 +172,9 @@ export default function HomePage() {
             </div>
           </div>
         </section>
+
+        {/* Pricing Section */}
+        <PricingSection />
 
         {/* Footer */}
         <footer className="py-12 border-t border-border">
