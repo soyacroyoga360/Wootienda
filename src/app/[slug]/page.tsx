@@ -254,9 +254,9 @@ export default async function BusinessLandingPage({ params }: PageProps) {
     textMutedClass = "text-slate-600 dark:text-slate-300"
     titleTextClass = "text-slate-900 dark:text-white"
   } else {
-    // claro
-    containerClass += " bg-[#f8fafc] text-slate-900"
-    mainCardClass = "bg-white rounded-3xl p-6 shadow-xl border border-slate-100 mb-8 flex flex-col items-center sm:items-start text-center sm:text-left"
+    // claro (default: limpio)
+    containerClass += " bg-[#ffffff] text-slate-900"
+    mainCardClass = "bg-white rounded-3xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.03)] border border-slate-100/70 mb-8 flex flex-col items-center sm:items-start text-center sm:text-left"
     logoBorderClass = "border-4 border-white"
     linkIconClass = "p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-800 transition-colors"
     textMutedClass = "text-slate-500"

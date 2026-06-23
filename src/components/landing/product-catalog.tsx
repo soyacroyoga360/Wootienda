@@ -162,46 +162,47 @@ export function ProductCatalog({ products, primaryColor, whatsapp, theme, busine
   })
 
   // Theme styling definitions for product cards
-  let cardClass = "bg-card text-foreground border border-border/50 shadow-sm rounded-2xl overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col items-center"
-  let titleClass = "font-bold text-base leading-tight mb-1 text-foreground transition-colors"
-  let descClass = "text-muted-foreground text-xs mb-3 line-clamp-2 max-w-[200px] leading-relaxed"
-  let textClass = "font-extrabold flex items-baseline gap-0.5 text-foreground"
+  // DEFAULT / CLARO: Pure clean white with soft premium shadow
+  let cardClass = "bg-white text-slate-900 border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.03)] rounded-2xl overflow-hidden hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 flex flex-col items-center"
+  let titleClass = "font-bold text-sm md:text-base leading-tight mb-1 text-slate-900 transition-colors"
+  let descClass = "text-slate-500 text-[10px] md:text-xs mb-3 line-clamp-2 max-w-[200px] leading-relaxed"
+  let textClass = "font-extrabold flex items-baseline gap-0.5 text-slate-900"
   
   // Modal container themes
   let modalBg = "bg-white text-slate-900 border border-slate-100"
   let modalInputClass = "w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
 
   // Base background for circular button ring offsets
-  let ringOffsetBg = "#f8fafc" // claro
+  let ringOffsetBg = "#ffffff" // claro
 
   if (theme === "oscuro") {
     cardClass = "bg-[#1a1a1a] text-white border border-[#262626] shadow-md rounded-2xl overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col items-center"
-    titleClass = "font-bold text-base leading-tight mb-1 text-white transition-colors"
-    descClass = "text-gray-400 text-xs mb-3 line-clamp-2 max-w-[200px] leading-relaxed"
+    titleClass = "font-bold text-sm md:text-base leading-tight mb-1 text-white transition-colors"
+    descClass = "text-gray-400 text-[10px] md:text-xs mb-3 line-clamp-2 max-w-[200px] leading-relaxed"
     textClass = "font-extrabold flex items-baseline gap-0.5 text-white"
     modalBg = "bg-[#1a1a1a] text-white border border-[#262626]"
     modalInputClass = "w-full px-4 py-2.5 rounded-xl border border-[#333] bg-[#222] text-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
     ringOffsetBg = "#121212"
   } else if (theme === "glassmorphism") {
     cardClass = "bg-white/10 dark:bg-black/25 backdrop-blur-md text-white border border-white/15 shadow-2xl rounded-2xl overflow-hidden hover:bg-white/15 transition-all duration-300 flex flex-col items-center"
-    titleClass = "font-bold text-base leading-tight mb-1 text-white drop-shadow-md"
-    descClass = "text-gray-200 text-xs mb-3 line-clamp-2 max-w-[200px] leading-relaxed"
+    titleClass = "font-bold text-sm md:text-base leading-tight mb-1 text-white drop-shadow-md"
+    descClass = "text-gray-200 text-[10px] md:text-xs mb-3 line-clamp-2 max-w-[200px] leading-relaxed"
     textClass = "font-extrabold flex items-baseline gap-0.5 text-white"
     modalBg = "bg-[#1e1b4b]/95 backdrop-blur-xl text-white border border-white/20"
     modalInputClass = "w-full px-4 py-2.5 rounded-xl border border-white/10 bg-white/5 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-white/20 focus:border-white/40"
     ringOffsetBg = "#150b24"
   } else if (theme === "neon-glow") {
     cardClass = "bg-[#09090b] text-white border border-primary/20 shadow-[0_0_15px_rgba(var(--user-primary-rgb,238,29,109),0.07)] hover:border-primary/50 hover:shadow-[0_0_20px_rgba(var(--user-primary-rgb,238,29,109),0.15)] rounded-2xl overflow-hidden hover:-translate-y-1 transition-all duration-300 flex flex-col items-center"
-    titleClass = "font-bold text-base leading-tight mb-1 text-white drop-shadow-[0_0_10px_rgba(var(--user-primary-rgb,238,29,109),0.2)]"
-    descClass = "text-gray-400 text-xs mb-3 line-clamp-2 max-w-[200px] leading-relaxed"
+    titleClass = "font-bold text-sm md:text-base leading-tight mb-1 text-white drop-shadow-[0_0_10px_rgba(var(--user-primary-rgb,238,29,109),0.2)]"
+    descClass = "text-gray-400 text-[10px] md:text-xs mb-3 line-clamp-2 max-w-[200px] leading-relaxed"
     textClass = "font-extrabold flex items-baseline gap-0.5 text-white"
     modalBg = "bg-[#09090b] text-white border border-primary/30 shadow-[0_0_25px_rgba(var(--user-primary-rgb,238,29,109),0.15)]"
     modalInputClass = "w-full px-4 py-2.5 rounded-xl border border-[#27272a] bg-[#121214] text-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
     ringOffsetBg = "#030303"
   } else if (theme === "gradient-mesh") {
     cardClass = "bg-card/75 backdrop-blur-sm text-foreground border border-border/40 shadow-md rounded-2xl overflow-hidden hover:bg-card hover:-translate-y-1 transition-all duration-300 flex flex-col items-center"
-    titleClass = "font-bold text-base leading-tight mb-1 text-foreground transition-colors"
-    descClass = "text-muted-foreground text-xs mb-3 line-clamp-2 max-w-[200px] leading-relaxed"
+    titleClass = "font-bold text-sm md:text-base leading-tight mb-1 text-foreground transition-colors"
+    descClass = "text-muted-foreground text-[10px] md:text-xs mb-3 line-clamp-2 max-w-[200px] leading-relaxed"
     textClass = "font-extrabold flex items-baseline gap-0.5 text-foreground"
     modalBg = "bg-white/90 dark:bg-[#120a2a]/90 backdrop-blur-md text-slate-900 dark:text-white border border-indigo-100 dark:border-purple-950/30"
     modalInputClass = "w-full px-4 py-2.5 rounded-xl border border-indigo-50 dark:border-purple-950/20 bg-white/50 dark:bg-black/30 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
@@ -276,25 +277,26 @@ export function ProductCatalog({ products, primaryColor, whatsapp, theme, busine
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Category Carousel and Search Container */}
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-5">
         
         {/* Category Circles Carousel */}
         <div className="relative w-full group/carousel">
           {/* Left Arrow */}
           <button
             onClick={() => scrollCategories("left")}
-            className="absolute left-0 top-7 z-10 p-1.5 rounded-full bg-background/90 hover:bg-background border border-border/50 shadow-md hover:scale-105 active:scale-95 transition-all opacity-0 group-hover/carousel:opacity-100 duration-200 cursor-pointer hidden md:flex items-center justify-center size-8"
+            className="absolute left-0 top-6 z-10 p-1 rounded-full bg-background/90 hover:bg-background border border-border/50 shadow-md hover:scale-105 active:scale-95 transition-all opacity-0 group-hover/carousel:opacity-100 duration-200 cursor-pointer hidden md:flex items-center justify-center size-7"
             title="Anterior"
           >
-            <ChevronLeft className="size-4 text-foreground" />
+            <ChevronLeft className="size-3.5 text-foreground" />
           </button>
 
           {/* Scroll Container */}
+          {/* gap-3 on mobile allows 4 circles to fit perfectly on most phone screens */}
           <div
             ref={categoryScrollRef}
-            className="flex items-start gap-6 overflow-x-auto scrollbar-none px-4 md:px-8 py-2 scroll-smooth"
+            className="flex items-start gap-3 md:gap-6 overflow-x-auto scrollbar-none px-2 md:px-8 py-2 scroll-smooth"
           >
             {/* Option "All / Todos" */}
             {(() => {
@@ -303,28 +305,28 @@ export function ProductCatalog({ products, primaryColor, whatsapp, theme, busine
               return (
                 <button
                   onClick={() => setSelectedCategory("all")}
-                  className="flex flex-col items-center gap-2 group cursor-pointer shrink-0 border-0 bg-transparent outline-none focus:outline-none"
+                  className="flex flex-col items-center gap-1.5 md:gap-2 group cursor-pointer shrink-0 border-0 bg-transparent outline-none focus:outline-none"
                 >
                   <div
-                    className={`w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 ring-offset-2 ${
+                    className={`w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center transition-all duration-300 ring-offset-2 ${
                       isActive
                         ? "scale-105 ring-2"
                         : "hover:scale-105 border hover:border-muted-foreground/30"
                     }`}
                     style={{
-                      backgroundColor: isActive ? primaryColor : "rgba(var(--user-primary-rgb, 238, 29, 109), 0.05)",
+                      backgroundColor: isActive ? primaryColor : "rgba(var(--user-primary-rgb, 238, 29, 109), 0.04)",
                       color: isActive ? "#ffffff" : primaryColor,
-                      borderColor: isActive ? primaryColor : "rgba(var(--user-primary-rgb, 238, 29, 109), 0.15)",
-                      boxShadow: isActive ? `0 0 15px ${primaryColor}40` : "none",
+                      borderColor: isActive ? primaryColor : "rgba(var(--user-primary-rgb, 238, 29, 109), 0.12)",
+                      boxShadow: isActive ? `0 0 12px ${primaryColor}35` : "none",
                       ["--tw-ring-color" as any]: primaryColor,
                       ["--tw-ring-offset-color" as any]: ringOffsetBg
                     }}
                   >
-                    <Icon className="size-5 transition-transform group-hover:scale-110" />
+                    <Icon className="size-4.5 md:size-5 transition-transform group-hover:scale-110" />
                   </div>
                   <span
-                    className={`text-[11px] font-bold uppercase tracking-wider text-center max-w-[80px] truncate transition-colors duration-200 ${
-                      isActive ? "opacity-100 font-extrabold" : "opacity-70 group-hover:opacity-100 text-muted-foreground"
+                    className={`text-[9.5px] md:text-[11px] font-bold uppercase tracking-wider text-center max-w-[65px] md:max-w-[80px] truncate transition-colors duration-200 ${
+                      isActive ? "opacity-100 font-extrabold" : "opacity-60 group-hover:opacity-100 text-muted-foreground"
                     }`}
                   >
                     Todos
@@ -341,28 +343,28 @@ export function ProductCatalog({ products, primaryColor, whatsapp, theme, busine
                 <button
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
-                  className="flex flex-col items-center gap-2 group cursor-pointer shrink-0 border-0 bg-transparent outline-none focus:outline-none"
+                  className="flex flex-col items-center gap-1.5 md:gap-2 group cursor-pointer shrink-0 border-0 bg-transparent outline-none focus:outline-none"
                 >
                   <div
-                    className={`w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 ring-offset-2 ${
+                    className={`w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center transition-all duration-300 ring-offset-2 ${
                       isActive
                         ? "scale-105 ring-2"
                         : "hover:scale-105 border hover:border-muted-foreground/30"
                     }`}
                     style={{
-                      backgroundColor: isActive ? primaryColor : "rgba(var(--user-primary-rgb, 238, 29, 109), 0.05)",
+                      backgroundColor: isActive ? primaryColor : "rgba(var(--user-primary-rgb, 238, 29, 109), 0.04)",
                       color: isActive ? "#ffffff" : primaryColor,
-                      borderColor: isActive ? primaryColor : "rgba(var(--user-primary-rgb, 238, 29, 109), 0.15)",
-                      boxShadow: isActive ? `0 0 15px ${primaryColor}40` : "none",
+                      borderColor: isActive ? primaryColor : "rgba(var(--user-primary-rgb, 238, 29, 109), 0.12)",
+                      boxShadow: isActive ? `0 0 12px ${primaryColor}35` : "none",
                       ["--tw-ring-color" as any]: primaryColor,
                       ["--tw-ring-offset-color" as any]: ringOffsetBg
                     }}
                   >
-                    <Icon className="size-5 transition-transform group-hover:scale-110" />
+                    <Icon className="size-4.5 md:size-5 transition-transform group-hover:scale-110" />
                   </div>
                   <span
-                    className={`text-[11px] font-bold uppercase tracking-wider text-center max-w-[80px] truncate transition-colors duration-200 ${
-                      isActive ? "opacity-100 font-extrabold" : "opacity-70 group-hover:opacity-100 text-muted-foreground"
+                    className={`text-[9.5px] md:text-[11px] font-bold uppercase tracking-wider text-center max-w-[65px] md:max-w-[80px] truncate transition-colors duration-200 ${
+                      isActive ? "opacity-100 font-extrabold" : "opacity-60 group-hover:opacity-100 text-muted-foreground"
                     }`}
                   >
                     {cat}
@@ -375,34 +377,34 @@ export function ProductCatalog({ products, primaryColor, whatsapp, theme, busine
           {/* Right Arrow */}
           <button
             onClick={() => scrollCategories("right")}
-            className="absolute right-0 top-7 z-10 p-1.5 rounded-full bg-background/90 hover:bg-background border border-border/50 shadow-md hover:scale-105 active:scale-95 transition-all opacity-0 group-hover/carousel:opacity-100 duration-200 cursor-pointer hidden md:flex items-center justify-center size-8"
+            className="absolute right-0 top-6 z-10 p-1  rounded-full bg-background/90 hover:bg-background border border-border/50 shadow-md hover:scale-105 active:scale-95 transition-all opacity-0 group-hover/carousel:opacity-100 duration-200 cursor-pointer hidden md:flex items-center justify-center size-7"
             title="Siguiente"
           >
-            <ChevronRight className="size-4 text-foreground" />
+            <ChevronRight className="size-3.5 text-foreground" />
           </button>
         </div>
 
-        {/* Live Search bar (Floating or aligned below) */}
-        <div className="relative w-full max-w-md mx-auto">
+        {/* Live Search bar */}
+        <div className="relative w-full max-w-md mx-auto px-2 md:px-0">
           <input
             type="text"
             placeholder="Buscar productos..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-11 pr-4 py-2.5 rounded-full border border-border bg-card text-sm focus:outline-none focus:ring-2 transition-shadow"
+            className="w-full pl-11 pr-4 py-2 rounded-full border border-border bg-card text-sm focus:outline-none focus:ring-2 transition-shadow"
             style={{ "--tw-ring-color": `${primaryColor}30` } as React.CSSProperties}
           />
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+          <Search className="absolute left-6 md:left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
         </div>
       </div>
 
-      {/* Product list rendering */}
+      {/* Product list rendering - TWO COLUMNS on mobile (grid-cols-2) */}
       {filteredProducts.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6">
           {filteredProducts.map((product) => (
-            <div key={product.id} className={`group p-4 ${cardClass}`}>
+            <div key={product.id} className={`group p-3 md:p-4 ${cardClass}`}>
               {/* Product Image */}
-              <div className="relative aspect-square w-full bg-secondary/15 rounded-xl overflow-hidden shrink-0 mb-4">
+              <div className="relative aspect-square w-full bg-secondary/15 rounded-xl overflow-hidden shrink-0 mb-3">
                 {product.image_url ? (
                   <img
                     src={product.image_url}
@@ -412,7 +414,7 @@ export function ProductCatalog({ products, primaryColor, whatsapp, theme, busine
                   />
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center bg-secondary/30 text-muted-foreground/30">
-                    <ShoppingBag className="size-12 stroke-[1.5]" />
+                    <ShoppingBag className="size-8 md:size-12 stroke-[1.5]" />
                   </div>
                 )}
               </div>
@@ -420,7 +422,7 @@ export function ProductCatalog({ products, primaryColor, whatsapp, theme, busine
               {/* Product Details (Centered) */}
               <div className="flex-1 flex flex-col items-center w-full">
                 {product.category && (
-                  <span className="text-[10px] font-extrabold uppercase tracking-widest text-primary mb-1">
+                  <span className="text-[9px] md:text-[10px] font-extrabold uppercase tracking-widest text-primary mb-0.5 md:mb-1">
                     {product.category}
                   </span>
                 )}
@@ -434,18 +436,18 @@ export function ProductCatalog({ products, primaryColor, whatsapp, theme, busine
                 </p>
 
                 {/* Price and CTA Button */}
-                <div className="mt-auto w-full flex flex-col items-center gap-3">
+                <div className="mt-auto w-full flex flex-col items-center gap-2.5">
                   <span className={textClass}>
-                    <span className="text-xs font-semibold pr-0.5">$</span>
-                    <span className="text-lg font-extrabold">{product.price.toLocaleString()}</span>
+                    <span className="text-[10px] md:text-xs font-semibold pr-0.5">$</span>
+                    <span className="text-sm md:text-lg font-extrabold">{product.price.toLocaleString()}</span>
                   </span>
 
                   <button
                     onClick={() => handlePedirClick(product)}
-                    className="w-full inline-flex items-center justify-center whitespace-nowrap text-xs font-bold uppercase tracking-wider h-9 px-4 rounded-full text-white transition-all shadow-sm hover:scale-105 active:scale-95 cursor-pointer border-0 flex items-center justify-center gap-1.5"
+                    className="w-full inline-flex items-center justify-center whitespace-nowrap text-[10px] md:text-xs font-bold uppercase tracking-wider h-8 md:h-9 px-3 md:px-4 rounded-full text-white transition-all shadow-sm hover:scale-105 active:scale-95 cursor-pointer border-0 flex items-center justify-center gap-1 md:gap-1.5"
                     style={{ backgroundColor: primaryColor }}
                   >
-                    <MessageCircle className="size-3.5" />
+                    <MessageCircle className="size-3 md:size-3.5" />
                     Pedir
                   </button>
                 </div>
