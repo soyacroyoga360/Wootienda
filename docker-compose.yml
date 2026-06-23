@@ -39,7 +39,7 @@ services:
     restart: unless-stopped
 
   kong:
-    image: supabase/kong:2.8.1
+    image: ghcr.io/supabase/kong:2.8.1
     depends_on:
       auth:
         condition: service_started
