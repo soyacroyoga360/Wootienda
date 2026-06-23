@@ -175,6 +175,19 @@ export function RegisterForm() {
       toast.success("¡Cuenta creada!", {
         description: "Revisa tu email para confirmar tu cuenta.",
       })
+
+      // Send welcome email in background
+      fetch("/api/emails/welcome", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: data.email,
+          name: data.fullName,
+          businessSlug: formatSlug(data.username),
+        }),
+      }).catch((err) => console.error("Error sending welcome email:", err))
     } catch {
       toast.error("Error inesperado. Intenta de nuevo.")
     } finally {

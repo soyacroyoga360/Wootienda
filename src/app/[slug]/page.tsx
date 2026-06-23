@@ -421,6 +421,8 @@ export default async function BusinessLandingPage({ params }: PageProps) {
             primaryColor={business.primary_color}
             whatsapp={business.whatsapp}
             theme={business.theme}
+            businessEmail={business.email}
+            businessName={business.name}
           />
         </section>
       </main>
