@@ -21,12 +21,33 @@ import {
   Check,
 } from "lucide-react"
 
+const RESERVED_SLUGS = [
+  "dashboard",
+  "login",
+  "register",
+  "auth",
+  "api",
+  "blog",
+  "admin",
+  "settings",
+  "reset-password",
+  "terms",
+  "privacy",
+  "pricing",
+  "wootienda",
+  "www",
+  "app",
+  "help",
+  "support",
+]
+
 export default function SettingsPage() {
   const supabase = createClient()
   const [isLoading, setIsLoading] = useState(true)
   const [isSavingProfile, setIsSavingProfile] = useState(false)
   const [isChangingPassword, setIsChangingPassword] = useState(false)
   const [isUpgrading, setIsUpgrading] = useState(false)
+  const [isSavingSlug, setIsSavingSlug] = useState(false)
 
   // User auth details
   const [email, setEmail] = useState("")
@@ -39,6 +60,8 @@ export default function SettingsPage() {
   // Business / Plan details
   const [businessId, setBusinessId] = useState<string | null>(null)
   const [currentPlan, setCurrentPlan] = useState("free")
+  const [slug, setSlug] = useState("")
+  const [originalSlug, setOriginalSlug] = useState("")
 
   // Load auth details & business plan
   useEffect(() => {
@@ -58,6 +81,8 @@ export default function SettingsPage() {
           if (business) {
             setBusinessId(business.id)
             setCurrentPlan(business.plan || "free")
+            setSlug(business.slug || "")
+            setOriginalSlug(business.slug || "")
           }
         }
       } catch (err) {
@@ -135,6 +160,69 @@ export default function SettingsPage() {
       toast.error(`Error al cambiar contraseña: ${err.message || "Intenta de nuevo."}`)
     } finally {
       setIsChangingPassword(false)
+    }
+  }
+
+  // Slug/URL Update Action
+  const handleSaveSlug = async () => {
+    const cleanSlug = slug.trim().toLowerCase()
+    if (!cleanSlug) {
+      toast.error("El slug no puede estar vacío")
+      return
+    }
+
+    if (cleanSlug.length < 3) {
+      toast.error("El slug debe tener al menos 3 caracteres")
+      return
+    }
+
+    if (RESERVED_SLUGS.includes(cleanSlug)) {
+      toast.error("Esta palabra está reservada para el sistema")
+      return
+    }
+
+    if (!/^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/.test(cleanSlug)) {
+      toast.error("El slug solo puede contener letras minúsculas, números y guiones (sin empezar ni terminar en guion)")
+      return
+    }
+
+    setIsSavingSlug(true)
+    try {
+      // Check duplicate
+      const { data: duplicate } = await supabase
+        .from("businesses")
+        .select("id")
+        .eq("slug", cleanSlug)
+        .neq("id", businessId)
+        .maybeSingle()
+
+      if (duplicate) {
+        toast.error("Esta dirección ya está en uso por otro negocio")
+        return
+      }
+
+      // Update in DB
+      const { error } = await supabase
+        .from("businesses")
+        .update({ slug: cleanSlug })
+        .eq("id", businessId)
+
+      if (error) throw error
+
+      setOriginalSlug(cleanSlug)
+      toast.success("Dirección de tu tienda actualizada correctamente", {
+        description: "El enlace 'Ver mi landing' del sidebar ahora apunta a tu nueva URL."
+      })
+      
+      // Reload page to refresh layouts / sidebars / links
+      setTimeout(() => {
+        window.location.reload()
+      }, 1000)
+    } catch (err: any) {
+      console.error("Error updating slug:", err)
+      toast.error(`Error al actualizar la dirección: ${err.message || "Intenta de nuevo."}`)
+    } finally {
+      setIsSavingSlug(false)
     }
   }
 
@@ -275,6 +363,56 @@ export default function SettingsPage() {
               <Button onClick={handleSaveProfile} disabled={isSavingProfile} className="min-w-[150px]">
                 {isSavingProfile && <Loader2 className="size-4 animate-spin" />}
                 {isSavingProfile ? "Guardando..." : "Guardar perfil"}
+              </Button>
+            </div>
+          </div>
+
+          {/* Slug URL configuration section */}
+          <div className="bg-card rounded-2xl border border-border/50 p-6 md:p-8 shadow-sm">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-xl bg-violet-500/10 text-violet-600 flex items-center justify-center">
+                <Globe className="size-5" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold">Dirección Web de tu Negocio (URL)</h2>
+                <p className="text-sm text-muted-foreground">
+                  Elige la dirección URL única (slug) para tu landing page pública
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="business-slug">Subdominio / Slug de URL</Label>
+                <div className="flex rounded-xl overflow-hidden border border-input focus-within:ring-2 focus-within:ring-primary/30 focus-within:border-primary transition-all duration-200">
+                  <span className="bg-secondary px-3.5 py-2.5 text-sm text-muted-foreground flex items-center border-r border-border font-medium select-none">
+                    wootienda.com/
+                  </span>
+                  <input
+                    id="business-slug"
+                    type="text"
+                    value={slug}
+                    onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, ""))}
+                    className="flex-1 bg-transparent px-4 py-2.5 text-sm focus:outline-none"
+                    placeholder="mi-negocio"
+                  />
+                </div>
+                {slug !== originalSlug && (
+                  <p className="text-xs text-muted-foreground">
+                    Tu nueva URL será: <span className="font-semibold text-foreground">wootienda.com/{slug || "mi-negocio"}</span>
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="flex justify-end mt-6 pt-4 border-t border-border/40">
+              <Button 
+                onClick={handleSaveSlug} 
+                disabled={isSavingSlug || slug === originalSlug || !slug}
+                className="min-w-[150px]"
+              >
+                {isSavingSlug && <Loader2 className="size-4 animate-spin" />}
+                {isSavingSlug ? "Guardando..." : "Actualizar dirección"}
               </Button>
             </div>
           </div>

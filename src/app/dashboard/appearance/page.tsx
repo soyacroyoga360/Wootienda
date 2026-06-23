@@ -82,6 +82,7 @@ export default function AppearancePage() {
   const [logoUrl, setLogoUrl] = useState("")
   const [primaryColor, setPrimaryColor] = useState("#EE1D6D")
   const [theme, setTheme] = useState("claro")
+  const [typography, setTypography] = useState("default")
   
   // Upgrade Modal
   const [isUpgradeOpen, setIsUpgradeOpen] = useState(false)
@@ -107,6 +108,7 @@ export default function AppearancePage() {
           setLogoUrl(business.logo_url || "")
           setPrimaryColor(business.primary_color || "#EE1D6D")
           setTheme(business.theme || "claro")
+          setTypography(business.typography || "default")
         }
       } catch (err) {
         console.error("Error loading appearance data:", err)
@@ -133,6 +135,7 @@ export default function AppearancePage() {
           logo_url: logoUrl.trim() || null,
           primary_color: primaryColor,
           theme: theme,
+          typography: typography,
         })
         .eq("id", businessId)
 
@@ -446,6 +449,49 @@ export default function AppearancePage() {
                           Desbloquear con PRO
                         </span>
                       </div>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+          </section>
+
+          {/* Typography */}
+          <section className="bg-card rounded-2xl border border-border/50 p-6 md:p-8">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-10 h-10 rounded-xl bg-cyan-500/10 text-cyan-600 flex items-center justify-center">
+                <Type className="size-5" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold">Tipografía</h2>
+                <p className="text-sm text-muted-foreground">
+                  Elige la fuente de texto y títulos para tu landing page
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {[
+                { id: "default", name: "Plus Jakarta Sans", preview: "Aa Bb" },
+                { id: "inter", name: "Inter", preview: "Aa Bb" },
+                { id: "outfit", name: "Outfit", preview: "Aa Bb" },
+              ].map((font) => {
+                const isSelected = typography === font.id
+                return (
+                  <button
+                    type="button"
+                    key={font.id}
+                    onClick={() => setTypography(font.id)}
+                    className={`text-left p-4 rounded-xl border-2 transition-all duration-200 cursor-pointer ${
+                      isSelected
+                        ? "border-primary bg-primary/5 shadow-sm"
+                        : "border-border hover:border-primary/30"
+                    }`}
+                  >
+                    <p className="text-2xl font-bold mb-1">{font.preview}</p>
+                    <span className="text-xs text-muted-foreground">{font.name}</span>
+                    {isSelected && (
+                      <Check className="size-4 text-primary mt-1" />
                     )}
                   </button>
                 )

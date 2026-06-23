@@ -1,26 +1,70 @@
 import { notFound } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
+import type { Metadata } from "next"
 import { createClient } from "@/lib/supabase/server"
-import { Button } from "@/components/ui/button"
+import { ProductCatalog } from "@/components/landing/product-catalog"
 import {
   MapPin,
-  MessageCircle,
   Globe,
-  Phone,
-  Mail,
   Clock,
-  ShoppingBag,
   Camera,
   Hash,
   AtSign,
-  Video,
-  ExternalLink,
-  Search,
+  ShoppingBag,
 } from "lucide-react"
 
 interface PageProps {
   params: Promise<{ slug: string }>
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { slug } = await params
+  
+  try {
+    const supabase = await createClient()
+    const { data: dbBusiness } = await supabase
+      .from("businesses")
+      .select("business_name, description")
+      .eq("slug", slug)
+      .maybeSingle()
+
+    if (dbBusiness) {
+      return {
+        title: `${dbBusiness.business_name} | Wootienda`,
+        description: dbBusiness.description || `Visita la tienda en línea de ${dbBusiness.business_name} en Wootienda.`,
+      }
+    }
+  } catch (err) {
+    console.error("Error generating metadata:", err)
+  }
+  
+  if (slug === "cafe-sierra") {
+    return {
+      title: "Café Sierra | Wootienda",
+      description: "El mejor café de especialidad tostado en la ciudad. Descubre nuestra selección de granos de origen único, métodos de extracción y repostería artesanal.",
+    }
+  }
+  
+  return {
+    title: "Wootienda",
+    description: "Crea la landing page de tu negocio en minutos.",
+  }
+}
+
+// Helper to convert hex to RGB values for neon theme glowing shadows
+function hexToRgb(hex: string): string {
+  let cleanHex = hex.replace("#", "")
+  if (cleanHex.length === 3) {
+    cleanHex = cleanHex.split("").map((char) => char + char).join("")
+  }
+  if (cleanHex.length !== 6) {
+    return "238, 29, 109" // fallback to Wootienda pink (rgb equivalent of #EE1D6D)
+  }
+  const r = parseInt(cleanHex.substring(0, 2), 16)
+  const g = parseInt(cleanHex.substring(2, 4), 16)
+  const b = parseInt(cleanHex.substring(4, 6), 16)
+  return `${r}, ${g}, ${b}`
 }
 
 // Mock data for visual development since the database might be empty
@@ -42,7 +86,8 @@ const MOCK_BUSINESS = {
     facebook: "cafesierra.mx",
     twitter: "@cafesierra_mx",
   },
-  theme: "claro", // claro, oscuro
+  theme: "claro", // claro, oscuro, glassmorphism, neon-glow, gradient-mesh
+  typography: "default",
   primary_color: "#EE1D6D", // Wootienda Pink as default
   products: [
     {
@@ -135,13 +180,14 @@ export default async function BusinessLandingPage({ params }: PageProps) {
           twitter: socials.twitter || socials.x || "",
         },
         theme: dbBusiness.theme || "claro",
+        typography: dbBusiness.typography || "default",
         primary_color: dbBusiness.primary_color || "#EE1D6D",
         products: (dbProducts || []).map((p) => ({
           id: p.id,
           name: p.name,
           description: p.description || "",
           price: Number(p.price) || 0,
-          image_url: p.image_url || "https://images.unsplash.com/photo-1559525839-b184a4d698c7?q=80&w=1000&auto=format&fit=crop",
+          image_url: p.image_url || "",
           category: p.category || "General",
         }))
       }
@@ -160,16 +206,66 @@ export default async function BusinessLandingPage({ params }: PageProps) {
     }
   }
 
-  // Set CSS variable for primary color so hover states and buttons use the user's color
+  // Set CSS variables for primary color, RGB, and dynamic typography
   const themeStyle = {
     "--user-primary": business.primary_color,
+    "--user-primary-rgb": hexToRgb(business.primary_color),
+    fontFamily: 
+      business.typography === "inter" 
+        ? "var(--font-inter), system-ui, sans-serif" 
+        : business.typography === "outfit" 
+        ? "var(--font-outfit), system-ui, sans-serif" 
+        : "var(--font-plus-jakarta), system-ui, sans-serif",
   } as React.CSSProperties
 
-  const isDark = business.theme === 'oscuro'
+  let containerClass = "min-h-screen pb-24 transition-all duration-300"
+  let mainCardClass = ""
+  let logoBorderClass = ""
+  let linkIconClass = ""
+  let textMutedClass = ""
+  let titleTextClass = ""
+
+  if (business.theme === "oscuro") {
+    containerClass += " bg-[#121212] text-white"
+    mainCardClass = "bg-[#1a1a1a] rounded-3xl p-6 shadow-xl border border-[#262626] mb-8 flex flex-col items-center sm:items-start text-center sm:text-left"
+    logoBorderClass = "border-4 border-[#1a1a1a]"
+    linkIconClass = "p-2 rounded-full bg-[#262626] hover:bg-[#333333] text-gray-200 transition-colors"
+    textMutedClass = "text-gray-400"
+    titleTextClass = "text-white"
+  } else if (business.theme === "glassmorphism") {
+    containerClass += " bg-gradient-to-tr from-[#0f172a] via-[#1e1b4b] to-[#311042] text-white"
+    mainCardClass = "bg-white/10 dark:bg-black/25 backdrop-blur-md rounded-3xl p-6 shadow-2xl border border-white/15 mb-8 flex flex-col items-center sm:items-start text-center sm:text-left text-white"
+    logoBorderClass = "border-4 border-white/10 dark:border-black/25"
+    linkIconClass = "p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors border border-white/10"
+    textMutedClass = "text-gray-200"
+    titleTextClass = "text-white"
+  } else if (business.theme === "neon-glow") {
+    containerClass += " bg-[#030303] text-white"
+    mainCardClass = "bg-[#09090b] rounded-3xl p-6 shadow-[0_0_15px_rgba(var(--user-primary-rgb,238,29,109),0.07)] border border-primary/20 mb-8 flex flex-col items-center sm:items-start text-center sm:text-left"
+    logoBorderClass = "border-4 border-[#09090b]"
+    linkIconClass = "p-2 rounded-full bg-[#18181b] hover:bg-[#27272a] text-white transition-colors border border-primary/10"
+    textMutedClass = "text-gray-400"
+    titleTextClass = "text-white"
+  } else if (business.theme === "gradient-mesh") {
+    containerClass += " bg-gradient-to-br from-[#e0e7ff] via-[#f3e8ff] to-[#fce7f3] dark:from-[#090514] dark:via-[#120a2a] dark:to-[#1a0b2e] text-slate-900 dark:text-white"
+    mainCardClass = "bg-white/70 dark:bg-black/40 backdrop-blur-sm rounded-3xl p-6 shadow-xl border border-indigo-100 dark:border-purple-950/40 mb-8 flex flex-col items-center sm:items-start text-center sm:text-left"
+    logoBorderClass = "border-4 border-white/70 dark:border-black/40"
+    linkIconClass = "p-2 rounded-full bg-indigo-50 dark:bg-purple-950/30 hover:bg-indigo-100 dark:hover:bg-purple-900/40 text-indigo-700 dark:text-purple-300 transition-colors"
+    textMutedClass = "text-slate-600 dark:text-slate-300"
+    titleTextClass = "text-slate-900 dark:text-white"
+  } else {
+    // claro
+    containerClass += " bg-[#f8fafc] text-slate-900"
+    mainCardClass = "bg-white rounded-3xl p-6 shadow-xl border border-slate-100 mb-8 flex flex-col items-center sm:items-start text-center sm:text-left"
+    logoBorderClass = "border-4 border-white"
+    linkIconClass = "p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-800 transition-colors"
+    textMutedClass = "text-slate-500"
+    titleTextClass = "text-slate-900"
+  }
 
   return (
     <div 
-      className={`min-h-screen pb-24 ${isDark ? 'bg-[#121212] text-white' : 'bg-background text-foreground'}`}
+      className={containerClass}
       style={themeStyle}
     >
       {/* 1. Header / Banner */}
@@ -193,10 +289,10 @@ export default async function BusinessLandingPage({ params }: PageProps) {
       {/* 2. Main content area */}
       <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 -mt-20 relative z-10">
         {/* Contenedor del perfil (Foto flotante y nombre) */}
-        <div className="bg-card dark:bg-[#1a1a1a] rounded-3xl p-6 shadow-xl border border-border/50 mb-8 flex flex-col items-center sm:items-start text-center sm:text-left">
+        <div className={mainCardClass}>
           <div className="flex flex-col sm:flex-row gap-6 items-center sm:items-start w-full">
             {/* Logotipo/Avatar */}
-            <div className="w-32 h-32 md:w-40 md:h-40 shrink-0 rounded-full border-4 border-card dark:border-[#1a1a1a] shadow-lg overflow-hidden bg-muted -mt-16 sm:-mt-20 relative z-20">
+            <div className={`w-32 h-32 md:w-40 md:h-40 shrink-0 rounded-full shadow-lg overflow-hidden bg-muted -mt-16 sm:-mt-20 relative z-20 ${logoBorderClass}`}>
               {business.logo_url ? (
                 <Image
                   src={business.logo_url}
@@ -213,11 +309,11 @@ export default async function BusinessLandingPage({ params }: PageProps) {
 
             {/* Detalles principales */}
             <div className="flex-1 space-y-3">
-              <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">
+              <h1 className={`text-3xl md:text-4xl font-extrabold tracking-tight ${titleTextClass}`}>
                 {business.name}
               </h1>
               {business.description && (
-                <p className="text-muted-foreground max-w-2xl leading-relaxed">
+                <p className={`${textMutedClass} max-w-2xl leading-relaxed`}>
                   {business.description}
                 </p>
               )}
@@ -225,7 +321,17 @@ export default async function BusinessLandingPage({ params }: PageProps) {
               {/* Badges de info */}
               <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 pt-2">
                 {business.address && (
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary text-secondary-foreground text-sm">
+                  <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full ${
+                    business.theme === 'glassmorphism' 
+                      ? 'bg-white/10 text-white' 
+                      : business.theme === 'oscuro' 
+                      ? 'bg-slate-800 text-slate-200' 
+                      : business.theme === 'neon-glow'
+                      ? 'bg-[#09090b] text-white border border-[#ee1d6d]/20'
+                      : business.theme === 'gradient-mesh'
+                      ? 'bg-white/50 dark:bg-black/20 text-slate-800 dark:text-slate-200'
+                      : 'bg-secondary text-secondary-foreground'
+                  } text-sm`}>
                     <MapPin className="size-4" />
                     <span>{business.city ? `${business.city}, ${business.country}` : 'Ubicación física'}</span>
                   </div>
@@ -233,17 +339,16 @@ export default async function BusinessLandingPage({ params }: PageProps) {
               </div>
             </div>
 
-            {/* CTAs rápidos */}
+            {/* CTA rápido a WhatsApp */}
             <div className="flex flex-wrap sm:flex-col gap-3 shrink-0 pt-2 sm:pt-0">
               {business.whatsapp && (
                 <a 
                   href={`https://wa.me/${business.whatsapp}`} 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium h-10 px-4 py-2 rounded-full shadow-md text-white border-0 transition-transform hover:-translate-y-0.5"
+                  className="inline-flex items-center justify-center whitespace-nowrap text-sm font-bold h-10 px-6 rounded-full shadow-md text-white transition-transform hover:-translate-y-0.5 active:translate-y-0 duration-200 border-0"
                   style={{ backgroundColor: business.primary_color }}
                 >
-                  <MessageCircle className="size-4 mr-2" />
                   WhatsApp
                 </a>
               )}
@@ -251,17 +356,27 @@ export default async function BusinessLandingPage({ params }: PageProps) {
           </div>
 
           {/* Redes sociales y Contacto extendido */}
-          <div className="w-full mt-6 pt-6 border-t border-border/50 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-muted-foreground">
+          <div className={`w-full mt-6 pt-6 border-t ${
+            business.theme === 'glassmorphism' 
+              ? 'border-white/10' 
+              : business.theme === 'oscuro' 
+              ? 'border-slate-800' 
+              : business.theme === 'neon-glow'
+              ? 'border-[#ee1d6d]/10'
+              : business.theme === 'gradient-mesh'
+              ? 'border-indigo-100/50 dark:border-purple-950/20'
+              : 'border-border/50'
+          } grid grid-cols-1 md:grid-cols-2 gap-4 text-sm`}>
             <div className="space-y-3">
               {business.schedule && (
-                <div className="flex items-start gap-2.5">
-                  <Clock className="size-4 shrink-0 mt-0.5 text-foreground" />
+                <div className={`flex items-start gap-2.5 ${textMutedClass}`}>
+                  <Clock className="size-4 shrink-0 mt-0.5" />
                   <span>{business.schedule}</span>
                 </div>
               )}
               {business.address && (
-                <div className="flex items-start gap-2.5">
-                  <MapPin className="size-4 shrink-0 mt-0.5 text-foreground" />
+                <div className={`flex items-start gap-2.5 ${textMutedClass}`}>
+                  <MapPin className="size-4 shrink-0 mt-0.5" />
                   <span>{business.address}</span>
                 </div>
               )}
@@ -269,22 +384,22 @@ export default async function BusinessLandingPage({ params }: PageProps) {
             
             <div className="flex flex-wrap items-center md:justify-end gap-3 auto-rows-max">
               {business.socials?.instagram && (
-                <a href={`https://instagram.com/${business.socials.instagram.replace('@', '')}`} target="_blank" rel="noreferrer" className="p-2 rounded-full bg-secondary hover:bg-secondary/80 text-foreground transition-colors">
+                <a href={`https://instagram.com/${business.socials.instagram.replace('@', '')}`} target="_blank" rel="noreferrer" className={linkIconClass}>
                   <Camera className="size-4" />
                 </a>
               )}
               {business.socials?.facebook && (
-                <a href={`https://facebook.com/${business.socials.facebook}`} target="_blank" rel="noreferrer" className="p-2 rounded-full bg-secondary hover:bg-secondary/80 text-foreground transition-colors">
+                <a href={`https://facebook.com/${business.socials.facebook}`} target="_blank" rel="noreferrer" className={linkIconClass}>
                   <Hash className="size-4" />
                 </a>
               )}
               {business.socials?.twitter && (
-                <a href={`https://twitter.com/${business.socials.twitter.replace('@', '')}`} target="_blank" rel="noreferrer" className="p-2 rounded-full bg-secondary hover:bg-secondary/80 text-foreground transition-colors">
+                <a href={`https://twitter.com/${business.socials.twitter.replace('@', '')}`} target="_blank" rel="noreferrer" className={linkIconClass}>
                   <AtSign className="size-4" />
                 </a>
               )}
               {business.website && (
-                <a href={business.website} target="_blank" rel="noreferrer" className="p-2 rounded-full bg-secondary hover:bg-secondary/80 text-foreground transition-colors">
+                <a href={business.website} target="_blank" rel="noreferrer" className={linkIconClass}>
                   <Globe className="size-4" />
                 </a>
               )}
@@ -299,83 +414,14 @@ export default async function BusinessLandingPage({ params }: PageProps) {
               <ShoppingBag className="size-6" style={{ color: business.primary_color }} />
               Nuestro Catálogo
             </h2>
-            
-            {/* Buscador visual (mock) */}
-            <div className="relative w-full sm:w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-              <input 
-                type="text" 
-                placeholder="Buscar productos..." 
-                className="w-full pl-9 pr-4 py-2 rounded-full border border-border bg-card text-sm focus:outline-none focus:ring-2 transition-shadow"
-                style={{ '--tw-ring-color': `${business.primary_color}30` } as React.CSSProperties}
-              />
-            </div>
           </div>
 
-          {business.products && business.products.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {business.products.map((product) => (
-                <div 
-                  key={product.id} 
-                  className="group bg-card dark:bg-[#1a1a1a] rounded-2xl overflow-hidden border border-border/50 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 flex flex-col"
-                >
-                  <div className="relative aspect-square w-full bg-secondary overflow-hidden">
-                    <Image
-                      src={product.image_url}
-                      alt={product.name}
-                      fill
-                      className="object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                    {product.category && (
-                      <span className="absolute top-3 inset-x-0 mx-auto w-max px-3 py-1 rounded-full bg-black/50 backdrop-blur-md text-white text-xs font-semibold uppercase tracking-wider">
-                        {product.category}
-                      </span>
-                    )}
-                  </div>
-                  
-                  <div className="p-5 flex flex-col flex-1">
-                    <h3 className="font-bold text-lg leading-tight mb-2 group-hover:text-[var(--user-primary)] transition-colors">
-                      {product.name}
-                    </h3>
-                    <p className="text-muted-foreground text-sm mb-4 line-clamp-2 mt-auto">
-                      {product.description}
-                    </p>
-                    
-                    <div className="flex items-center justify-between mt-auto pt-4 border-t border-border/50">
-                      <span className="font-extrabold flex items-baseline gap-1" style={{ color: business.primary_color }}>
-                        <span className="text-sm">$</span>
-                        <span className="text-xl">{product.price.toLocaleString()}</span>
-                      </span>
-                      
-                      {business.whatsapp ? (
-                        <a 
-                          href={`https://wa.me/${business.whatsapp}?text=Hola,%20me%20interesa%20el%20producto:%20${encodeURIComponent(product.name)}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium h-9 px-3 rounded-full text-white transition-colors hover:opacity-90"
-                          style={{ backgroundColor: business.primary_color }}
-                        >
-                          Pedir
-                        </a>
-                      ) : (
-                        <button 
-                          className="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium h-9 px-3 rounded-full text-white transition-colors hover:opacity-90"
-                          style={{ backgroundColor: business.primary_color }}
-                        >
-                          Me interesa
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : ( // Product empty state
-            <div className="py-20 text-center bg-card rounded-2xl border border-dashed border-border/50">
-              <ShoppingBag className="size-10 mx-auto text-muted-foreground/30 mb-3" />
-              <p className="text-muted-foreground font-medium">No hay productos disponibles por el momento.</p>
-            </div>
-          )}
+          <ProductCatalog 
+            products={business.products}
+            primaryColor={business.primary_color}
+            whatsapp={business.whatsapp}
+            theme={business.theme}
+          />
         </section>
       </main>
 
@@ -384,7 +430,7 @@ export default async function BusinessLandingPage({ params }: PageProps) {
         <Link 
           href="/" 
           target="_blank" 
-          className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-secondary/50 hover:bg-secondary text-sm text-muted-foreground hover:text-foreground transition-all duration-300"
+          className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-secondary/50 hover:bg-secondary text-sm text-muted-foreground hover:text-foreground transition-all duration-300 border-0"
         >
           <span>Creado con</span>
           <div className="flex items-center gap-1 opacity-70">
