@@ -15,10 +15,7 @@ import {
   ArrowLeft,
   Star,
   ExternalLink,
-  MessageCircle,
-  Camera,
-  AtSign,
-  Hash
+  MessageCircle
 } from "lucide-react"
 
 interface Product {
@@ -47,6 +44,8 @@ interface BusinessDetails {
     instagram: string
     facebook: string
     twitter: string
+    youtube?: string
+    telegram?: string
   }
   theme: string
   typography: string
@@ -170,17 +169,21 @@ export function LandingLayout({ business }: LandingLayoutProps) {
         }}
       >
         {/* Dark overlay backdrop */}
-        <div className="absolute inset-0 bg-black/65 backdrop-blur-[2px]" />
+        <div className="absolute inset-0 bg-black/70 backdrop-blur-[2px]" />
 
-        {/* Top Spacer or Small Watermark */}
+        {/* Top Spacer */}
         <div className="relative z-10 w-full text-center">
+          {/* Subtle logo mark */}
           <div className="inline-block w-8 h-8 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center font-black text-white text-xs border border-white/10">W</div>
         </div>
 
         {/* Center Welcome Container */}
         <div className="relative z-10 flex flex-col items-center text-center max-w-md w-full space-y-8 my-auto">
-          {/* Logo */}
-          <div className="w-28 h-28 md:w-32 md:h-32 rounded-full shadow-2xl border-4 border-white/20 overflow-hidden relative bg-[#121212]/30 backdrop-blur-sm flex items-center justify-center">
+          {/* Logo with primary color ring border */}
+          <div 
+            className="w-28 h-28 md:w-32 md:h-32 rounded-full shadow-2xl border-4 overflow-hidden relative bg-[#121212]/30 backdrop-blur-sm flex items-center justify-center transition-all duration-300"
+            style={{ borderColor: business.primary_color }}
+          >
             {business.logo_url ? (
               <Image
                 src={business.logo_url}
@@ -205,83 +208,133 @@ export function LandingLayout({ business }: LandingLayoutProps) {
             )}
           </div>
 
-          {/* Call To Actions */}
+          {/* Call To Actions - Spizzica Style (Outline text, border border-white) */}
           <div className="flex flex-col gap-3.5 w-full items-center">
             <button
               onClick={() => setView("catalog")}
-              className="w-64 py-3 rounded-full text-sm font-bold uppercase tracking-wider text-white transition-all shadow-lg hover:scale-105 active:scale-95 cursor-pointer border-0"
-              style={{ backgroundColor: business.primary_color }}
+              className="w-64 py-3.5 rounded text-xs font-black uppercase tracking-widest text-white transition-all bg-transparent border border-white hover:bg-white hover:text-black shadow-md hover:scale-105 active:scale-95 cursor-pointer"
             >
-              Ver {mainTabLabel}
+              {isFoodType ? "MENÚ" : "SERVICIOS"}
             </button>
             <button
               onClick={() => setView("info")}
-              className="w-64 py-3 rounded-full text-sm font-bold uppercase tracking-wider text-white transition-all bg-white/10 hover:bg-white/20 border border-white/25 backdrop-blur-md shadow-md hover:scale-105 active:scale-95 cursor-pointer"
+              className="w-64 py-3.5 rounded text-xs font-bold uppercase tracking-widest text-white transition-all bg-transparent border border-white/50 hover:bg-white hover:text-black shadow-md hover:scale-105 active:scale-95 cursor-pointer"
             >
-              Más Información
+              INFORMACIÓN
             </button>
           </div>
 
-          {/* Social icons */}
-          <div className="flex items-center gap-4 pt-4">
-            {business.socials?.instagram && (
-              <a 
-                href={`https://instagram.com/${business.socials.instagram.replace('@', '')}`} 
-                target="_blank" 
-                rel="noreferrer" 
-                className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors border border-white/10 flex items-center justify-center"
-              >
-                <Camera className="size-4" />
-              </a>
-            )}
+          {/* Social icons - White circles with black/dark logo */}
+          <div className="flex items-center gap-4 pt-4 flex-wrap justify-center">
             {business.socials?.facebook && (
               <a 
-                href={`https://facebook.com/${business.socials.facebook}`} 
+                href={business.socials.facebook.startsWith("http") ? business.socials.facebook : `https://facebook.com/${business.socials.facebook}`} 
                 target="_blank" 
                 rel="noreferrer" 
-                className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors border border-white/10 flex items-center justify-center"
+                className="size-10 rounded-full bg-white hover:bg-white/90 text-black flex items-center justify-center shadow-md transition-all hover:scale-110 active:scale-95"
               >
-                <Hash className="size-4" />
+                <svg className="size-4.5 fill-current text-black" viewBox="0 0 24 24">
+                  <path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6H16v3h-2c-.55 0-1 .45-1 1v2h3v3h-3v6.95c4.56-.93 8-4.96 8-9.75z"/>
+                </svg>
+              </a>
+            )}
+            {business.socials?.instagram && (
+              <a 
+                href={business.socials.instagram.startsWith("http") ? business.socials.instagram : `https://instagram.com/${business.socials.instagram.replace('@', '')}`} 
+                target="_blank" 
+                rel="noreferrer" 
+                className="size-10 rounded-full bg-white hover:bg-white/90 text-black flex items-center justify-center shadow-md transition-all hover:scale-110 active:scale-95"
+              >
+                <svg className="size-4.5 text-black" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+                  <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
+                  <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
+                </svg>
               </a>
             )}
             {business.socials?.twitter && (
               <a 
-                href={`https://twitter.com/${business.socials.twitter.replace('@', '')}`} 
+                href={business.socials.twitter.startsWith("http") ? business.socials.twitter : `https://twitter.com/${business.socials.twitter.replace('@', '')}`} 
                 target="_blank" 
                 rel="noreferrer" 
-                className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors border border-white/10 flex items-center justify-center"
+                className="size-10 rounded-full bg-white hover:bg-white/90 text-black flex items-center justify-center shadow-md transition-all hover:scale-110 active:scale-95"
               >
-                <AtSign className="size-4" />
+                <svg className="size-4.5 fill-current text-black" viewBox="0 0 24 24">
+                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                </svg>
               </a>
             )}
-            {business.website && (
+            {business.socials?.youtube && (
               <a 
-                href={business.website} 
+                href={business.socials.youtube.startsWith("http") ? business.socials.youtube : `https://youtube.com/${business.socials.youtube}`} 
                 target="_blank" 
                 rel="noreferrer" 
-                className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors border border-white/10 flex items-center justify-center"
+                className="size-10 rounded-full bg-white hover:bg-white/90 text-black flex items-center justify-center shadow-md transition-all hover:scale-110 active:scale-95"
               >
-                <Globe className="size-4" />
+                <svg className="size-4.5 fill-current text-black" viewBox="0 0 24 24">
+                  <path d="M23.498 6.163a3.003 3.003 0 0 0-2.11-2.108C19.522 3.5 12 3.5 12 3.5s-7.522 0-9.388.555A3.002 3.002 0 0 0 .502 6.163C0 8.07 0 12 0 12s0 3.93.502 5.837a3.003 3.003 0 0 0 2.11 2.108C4.478 20.5 12 20.5 12 20.5s7.522 0 9.388-.555a3.002 3.002 0 0 0 2.11-2.108C24 15.93 24 12 24 12s0-3.93-.502-5.837zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                </svg>
+              </a>
+            )}
+            {business.socials?.telegram && (
+              <a 
+                href={business.socials.telegram.startsWith("http") ? business.socials.telegram : `https://t.me/${business.socials.telegram.replace('@', '')}`} 
+                target="_blank" 
+                rel="noreferrer" 
+                className="size-10 rounded-full bg-white hover:bg-white/90 text-black flex items-center justify-center shadow-md transition-all hover:scale-110 active:scale-95"
+              >
+                <svg className="size-4.5 fill-current text-black ml-[-2px]" viewBox="0 0 24 24">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 0 0-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .24z"/>
+                </svg>
               </a>
             )}
           </div>
         </div>
 
-        {/* Google Reviews rating widget */}
-        <div className="relative z-10 flex flex-col items-center">
-          <div className="flex items-center gap-2.5 bg-black/40 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-white/5 shadow-md">
-            <div className="w-6.5 h-6.5 rounded-full bg-white flex items-center justify-center font-black text-xs text-blue-600 shadow-sm">G</div>
+        {/* Google Reviews rating widget & Watermark Footer */}
+        <div className="relative z-10 flex flex-col items-center gap-6 w-full max-w-xs">
+          <div className="flex items-center gap-3 bg-black/40 backdrop-blur-md px-4 py-2.5 rounded-xl border border-white/10 shadow-lg">
+            <div className="size-7 rounded-full bg-white flex items-center justify-center shadow-sm shrink-0">
+              <svg className="size-4" viewBox="0 0 24 24">
+                <path
+                  fill="#4285F4"
+                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                />
+                <path
+                  fill="#34A853"
+                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                />
+                <path
+                  fill="#FBBC05"
+                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+                />
+                <path
+                  fill="#EA4335"
+                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+                />
+              </svg>
+            </div>
             <div className="text-left leading-tight">
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs font-bold text-white">4.8</span>
+              <p className="text-[11px] font-bold text-white tracking-wide">Evaluación Google</p>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <span className="text-sm font-extrabold text-white">4.8</span>
                 <div className="flex gap-0.5">
                   {[1, 2, 3, 4, 5].map((s) => (
                     <Star key={s} className="size-3 fill-amber-400 text-amber-400" />
                   ))}
                 </div>
               </div>
-              <p className="text-[10px] text-slate-300">Excelente reputación en Google</p>
             </div>
+          </div>
+
+          <div className="text-center pt-2">
+            <Link 
+              href="/" 
+              target="_blank" 
+              className="text-xs text-white/70 hover:text-white transition-colors duration-200 no-underline cursor-pointer"
+            >
+              ¿Quieres tu Menú <span className="font-bold underline">Wootienda</span>? Clic Aquí
+            </Link>
           </div>
         </div>
       </div>
@@ -544,21 +597,68 @@ export function LandingLayout({ business }: LandingLayoutProps) {
 
               {/* Extended Social links in info */}
               <div className="pt-4 border-t border-border/30 flex flex-col items-center gap-4">
-                <h4 className="text-sm font-bold uppercase tracking-wider opacity-75">Siguenos en Redes Sociales</h4>
-                <div className="flex items-center gap-3">
-                  {business.socials?.instagram && (
-                    <a href={`https://instagram.com/${business.socials.instagram.replace('@', '')}`} target="_blank" rel="noreferrer" className={linkIconClass}>
-                      <Camera className="size-4.5" />
+                <h4 className="text-sm font-bold uppercase tracking-wider opacity-75">Síguenos en Redes Sociales</h4>
+                <div className="flex items-center gap-3.5 flex-wrap justify-center">
+                  {business.socials?.facebook && (
+                    <a 
+                      href={business.socials.facebook.startsWith("http") ? business.socials.facebook : `https://facebook.com/${business.socials.facebook}`} 
+                      target="_blank" 
+                      rel="noreferrer" 
+                      className={linkIconClass}
+                    >
+                      <svg className="size-4.5 fill-current" viewBox="0 0 24 24">
+                        <path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6H16v3h-2c-.55 0-1 .45-1 1v2h3v3h-3v6.95c4.56-.93 8-4.96 8-9.75z"/>
+                      </svg>
                     </a>
                   )}
-                  {business.socials?.facebook && (
-                    <a href={`https://facebook.com/${business.socials.facebook}`} target="_blank" rel="noreferrer" className={linkIconClass}>
-                      <Hash className="size-4.5" />
+                  {business.socials?.instagram && (
+                    <a 
+                      href={business.socials.instagram.startsWith("http") ? business.socials.instagram : `https://instagram.com/${business.socials.instagram.replace('@', '')}`} 
+                      target="_blank" 
+                      rel="noreferrer" 
+                      className={linkIconClass}
+                    >
+                      <svg className="size-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+                        <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
+                        <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
+                      </svg>
                     </a>
                   )}
                   {business.socials?.twitter && (
-                    <a href={`https://twitter.com/${business.socials.twitter.replace('@', '')}`} target="_blank" rel="noreferrer" className={linkIconClass}>
-                      <AtSign className="size-4.5" />
+                    <a 
+                      href={business.socials.twitter.startsWith("http") ? business.socials.twitter : `https://twitter.com/${business.socials.twitter.replace('@', '')}`} 
+                      target="_blank" 
+                      rel="noreferrer" 
+                      className={linkIconClass}
+                    >
+                      <svg className="size-4.5 fill-current" viewBox="0 0 24 24">
+                        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                      </svg>
+                    </a>
+                  )}
+                  {business.socials?.youtube && (
+                    <a 
+                      href={business.socials.youtube.startsWith("http") ? business.socials.youtube : `https://youtube.com/${business.socials.youtube}`} 
+                      target="_blank" 
+                      rel="noreferrer" 
+                      className={linkIconClass}
+                    >
+                      <svg className="size-4.5 fill-current" viewBox="0 0 24 24">
+                        <path d="M23.498 6.163a3.003 3.003 0 0 0-2.11-2.108C19.522 3.5 12 3.5 12 3.5s-7.522 0-9.388.555A3.002 3.002 0 0 0 .502 6.163C0 8.07 0 12 0 12s0 3.93.502 5.837a3.003 3.003 0 0 0 2.11 2.108C4.478 20.5 12 20.5 12 20.5s7.522 0 9.388-.555a3.002 3.002 0 0 0 2.11-2.108C24 15.93 24 12 24 12s0-3.93-.502-5.837zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                      </svg>
+                    </a>
+                  )}
+                  {business.socials?.telegram && (
+                    <a 
+                      href={business.socials.telegram.startsWith("http") ? business.socials.telegram : `https://t.me/${business.socials.telegram.replace('@', '')}`} 
+                      target="_blank" 
+                      rel="noreferrer" 
+                      className={linkIconClass}
+                    >
+                      <svg className="size-4.5 fill-current ml-[-1px]" viewBox="0 0 24 24">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 0 0-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .24z"/>
+                      </svg>
                     </a>
                   )}
                 </div>

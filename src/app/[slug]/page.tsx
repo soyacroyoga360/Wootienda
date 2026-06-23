@@ -153,6 +153,8 @@ export default async function BusinessLandingPage({ params }: PageProps) {
           instagram: socials.instagram || "",
           facebook: socials.facebook || "",
           twitter: socials.twitter || socials.x || "",
+          youtube: socials.youtube || "",
+          telegram: socials.telegram || "",
         },
         theme: dbBusiness.theme || "claro",
         typography: dbBusiness.typography || "default",

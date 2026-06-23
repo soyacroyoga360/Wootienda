@@ -16,7 +16,8 @@ import {
   Tv,
   Tag,
   Package,
-  Sparkles
+  Sparkles,
+  X
 } from "lucide-react"
 
 interface Product {
@@ -130,6 +131,7 @@ const getCategoryIcon = (categoryName: string) => {
 export function ProductCatalog({ products, primaryColor, whatsapp, theme, businessEmail, businessName }: ProductCatalogProps) {
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("all")
+  const [selectedProductDetail, setSelectedProductDetail] = useState<Product | null>(null)
 
   // Lead modal states
   const [isLeadModalOpen, setIsLeadModalOpen] = useState(false)
@@ -402,16 +404,28 @@ export function ProductCatalog({ products, primaryColor, whatsapp, theme, busine
       {filteredProducts.length > 0 ? (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6">
           {filteredProducts.map((product) => (
-            <div key={product.id} className={`group p-3 md:p-4 ${cardClass}`}>
+            <div 
+              key={product.id} 
+              onClick={() => setSelectedProductDetail(product)}
+              className={`group p-3 md:p-4 cursor-pointer ${cardClass}`}
+            >
               {/* Product Image */}
               <div className="relative aspect-square w-full bg-secondary/15 rounded-xl overflow-hidden shrink-0 mb-3">
                 {product.image_url ? (
-                  <img
-                    src={product.image_url}
-                    alt={product.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    loading="lazy"
-                  />
+                  <>
+                    <img
+                      src={product.image_url}
+                      alt={product.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      loading="lazy"
+                    />
+                    {/* Hover glassmorphism overlay indicating clickable card */}
+                    <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                      <span className="text-[9px] md:text-[10px] font-bold uppercase tracking-wider text-white bg-black/60 px-2.5 py-1 rounded-full border border-white/10 backdrop-blur-sm shadow-sm scale-90 group-hover:scale-100 transition-transform duration-300">
+                        Ver detalles
+                      </span>
+                    </div>
+                  </>
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center bg-secondary/30 text-muted-foreground/30">
                     <ShoppingBag className="size-8 md:size-12 stroke-[1.5]" />
@@ -443,7 +457,10 @@ export function ProductCatalog({ products, primaryColor, whatsapp, theme, busine
                   </span>
 
                   <button
-                    onClick={() => handlePedirClick(product)}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handlePedirClick(product)
+                    }}
                     className="w-full inline-flex items-center justify-center whitespace-nowrap text-[10px] md:text-xs font-bold uppercase tracking-wider h-8 md:h-9 px-3 md:px-4 rounded-full text-white transition-all shadow-sm hover:scale-105 active:scale-95 cursor-pointer border-0 flex items-center justify-center gap-1 md:gap-1.5"
                     style={{ backgroundColor: primaryColor }}
                   >
@@ -459,6 +476,90 @@ export function ProductCatalog({ products, primaryColor, whatsapp, theme, busine
         <div className="py-20 text-center bg-card rounded-2xl border border-dashed border-border/50 shadow-sm">
           <ShoppingBag className="size-10 mx-auto text-muted-foreground/30 mb-3" />
           <p className="text-muted-foreground font-medium">No se encontraron productos en esta sección.</p>
+        </div>
+      )}
+
+      {/* Product Detail Modal ("Ver más") */}
+      {selectedProductDetail && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className={`w-full max-w-lg p-0 rounded-3xl shadow-2xl transition-all duration-300 overflow-hidden ${modalBg}`}>
+            {/* Header image with close button */}
+            <div className="relative aspect-[4/3] w-full bg-secondary/10">
+              {selectedProductDetail.image_url ? (
+                <img
+                  src={selectedProductDetail.image_url}
+                  alt={selectedProductDetail.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-secondary/30 text-muted-foreground/30">
+                  <ShoppingBag className="size-16 stroke-[1.2]" />
+                </div>
+              )}
+              {/* Close Button */}
+              <button
+                onClick={() => setSelectedProductDetail(null)}
+                className="absolute top-4 right-4 p-2 rounded-full bg-black/60 hover:bg-black/80 text-white transition-colors border-0 cursor-pointer shadow-md flex items-center justify-center"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+
+            {/* Content Details */}
+            <div className="p-6 md:p-8 space-y-4">
+              <div className="flex items-center justify-between gap-2">
+                {selectedProductDetail.category && (
+                  <span className="text-[10px] md:text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full"
+                    style={{ 
+                      backgroundColor: `${primaryColor}15`, 
+                      color: primaryColor 
+                    }}
+                  >
+                    {selectedProductDetail.category}
+                  </span>
+                )}
+                <span className={`${textClass} text-lg md:text-2xl`}>
+                  <span className="text-sm font-semibold pr-0.5">$</span>
+                  <span>{selectedProductDetail.price.toLocaleString()}</span>
+                </span>
+              </div>
+
+              <div className="space-y-2">
+                <h3 className="text-xl md:text-2xl font-extrabold tracking-tight leading-tight">
+                  {selectedProductDetail.name}
+                </h3>
+                <div className="max-h-32 md:max-h-40 overflow-y-auto scrollbar-thin pr-1">
+                  <p className="text-sm leading-relaxed opacity-80 whitespace-pre-wrap">
+                    {selectedProductDetail.description || "Este producto no tiene una descripción detallada disponible."}
+                  </p>
+                </div>
+              </div>
+
+              {/* Action buttons */}
+              <div className="flex items-center gap-3 pt-4 border-t border-white/10 mt-6">
+                <button
+                  type="button"
+                  onClick={() => setSelectedProductDetail(null)}
+                  className="flex-1 py-3 text-xs md:text-sm font-bold uppercase tracking-wider rounded-full hover:bg-secondary/15 transition-colors cursor-pointer border-0"
+                >
+                  Volver al menú
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const prod = selectedProductDetail
+                    setSelectedProductDetail(null)
+                    handlePedirClick(prod)
+                  }}
+                  className="flex-1 py-3 text-xs md:text-sm font-black uppercase tracking-wider text-white rounded-full transition-transform hover:scale-105 active:scale-95 flex items-center justify-center gap-2 cursor-pointer border-0"
+                  style={{ backgroundColor: primaryColor }}
+                >
+                  <MessageCircle className="size-4" />
+                  Pedir
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
