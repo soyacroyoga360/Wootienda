@@ -29,6 +29,7 @@ import {
 const businessSchema = z.object({
   name: z.string().min(2, "Mínimo 2 caracteres").max(100),
   description: z.string().max(500).optional(),
+  category: z.string(),
   phone: z.string().optional(),
   email: z.string().email("Email inválido").optional().or(z.literal("")),
   website: z.string().url("URL inválida").optional().or(z.literal("")),
@@ -60,6 +61,7 @@ export function BusinessForm() {
     defaultValues: {
       name: "",
       description: "",
+      category: "restaurant",
       phone: "",
       email: "",
       website: "",
@@ -112,6 +114,7 @@ export function BusinessForm() {
           reset({
             name: business.business_name || "",
             description: business.description || "",
+            category: business.category || "restaurant",
             phone: business.phone || "",
             email: business.email || "",
             website: business.website || "",
@@ -156,6 +159,7 @@ export function BusinessForm() {
             slug: generatedSlug,
             business_name: data.name,
             description: data.description,
+            category: data.category,
             phone: data.phone,
             email: data.email,
             website: data.website,
@@ -176,6 +180,7 @@ export function BusinessForm() {
           .update({
             business_name: data.name,
             description: data.description,
+            category: data.category,
             phone: data.phone,
             email: data.email,
             website: data.website,
@@ -243,8 +248,8 @@ export function BusinessForm() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <div className="md:col-span-2 space-y-2">
-            <Label htmlFor="name">Nombre del negocio *</Label>
+          <div className="space-y-2">
+            <Label htmlFor="name">Nombre del negocio</Label>
             <Input
               id="name"
               placeholder="Ej: Café Sierra"
@@ -252,6 +257,21 @@ export function BusinessForm() {
             />
             {errors.name && (
               <p className="text-sm text-destructive">{errors.name.message}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="category">Tipo de negocio / Rubro</Label>
+            <select
+              id="category"
+              className="flex h-10 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-200"
+              {...register("category")}
+            >
+              <option value="restaurant">Restaurante (Muestra botón MENÚ)</option>
+              <option value="services">Empresa / Servicios (Muestra botón SERVICIOS)</option>
+            </select>
+            {errors.category && (
+              <p className="text-sm text-destructive">{errors.category.message}</p>
             )}
           </div>
 
