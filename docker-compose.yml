@@ -39,7 +39,7 @@ services:
     restart: unless-stopped
 
   kong:
-    image: ghcr.io/supabase/kong:2.8.1
+    image: kong:2.8.1
     depends_on:
       auth:
         condition: service_started
@@ -49,7 +49,7 @@ services:
         condition: service_started
     environment:
       KONG_DATABASE: "off"
-      KONG_DECLARATIVE_CONFIG: /home/kong/kong.yml
+      KONG_DECLARATIVE_CONFIG: /tmp/kong.yml
       KONG_DNS_ORDER: LAST,A,CNAME
       KONG_PLUGINS: request-transformer,cors,key-auth,acl
       KONG_NGINX_PROXY_PROXY_BUFFER_SIZE: 160k
@@ -60,6 +60,12 @@ services:
       - "${SUPABASE_API_PORT:-8000}:8000/tcp"
     volumes:
       - ./docker/supabase/kong.yml:/home/kong/kong.yml:ro
+    command:
+      - sh
+      - -c
+      - |
+        sed "s|\$${SUPABASE_ANON_KEY}|$$SUPABASE_ANON_KEY|g; s|\$${SUPABASE_SERVICE_ROLE_KEY}|$$SUPABASE_SERVICE_ROLE_KEY|g; s|\$${{SUPABASE_ANON_KEY}}|$$SUPABASE_ANON_KEY|g; s|\$${{SUPABASE_SERVICE_ROLE_KEY}}|$$SUPABASE_SERVICE_ROLE_KEY|g" /home/kong/kong.yml > /tmp/kong.yml
+        exec /docker-entrypoint.sh kong docker-start
     restart: unless-stopped
 
   auth:
