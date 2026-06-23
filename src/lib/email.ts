@@ -1,7 +1,7 @@
 import { Resend } from "resend"
 
 // Instancia global de Resend (busca la variable de entorno RESEND_API_KEY)
-const resend = new Resend(process.env.RESEND_API_KEY)
+const resend = new Resend(process.env.RESEND_API_KEY || "re_placeholder_for_build")
 
 const SENDER_EMAIL = process.env.SMTP_ADMIN_EMAIL || "hola@wootienda.com"
 const SENDER_NAME = process.env.SMTP_SENDER_NAME || "Wootienda"
