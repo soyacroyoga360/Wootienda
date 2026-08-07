@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { Search, ShoppingBag, MessageCircle, X } from "lucide-react"
+import { ShoppingBag, MessageCircle, X } from "lucide-react"
 
 interface Product {
   id: string
@@ -31,6 +31,7 @@ interface ProductCatalogProps {
   businessName: string
   bannerUrl: string
   tokens: Tokens
+  showSearch: boolean
 }
 
 /* ------------------------------------------------------- círculo de categoría */
@@ -59,7 +60,9 @@ function CategoryCircle({
       <div
         className="w-[76px] h-[76px] rounded-full overflow-hidden transition-all duration-300"
         style={{
-          boxShadow: active ? `0 0 0 2px ${primaryColor}, 0 0 0 5px ${tokens.fade}` : "none",
+          boxShadow: active
+            ? `0 0 0 3px ${primaryColor}, 0 0 0 6px ${tokens.fade}`
+            : `0 0 0 3px ${tokens.border}`,
           opacity: active ? 1 : 0.72,
         }}
       >
@@ -91,9 +94,9 @@ export function ProductCatalog({
   businessName,
   bannerUrl,
   tokens,
+  showSearch,
 }: ProductCatalogProps) {
   const [searchQuery, setSearchQuery] = useState("")
-  const [showSearch, setShowSearch] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState("all")
   const [detail, setDetail] = useState<Product | null>(null)
 
@@ -228,17 +231,18 @@ export function ProductCatalog({
 
   return (
     <div className="py-6">
-      {/* Buscador — fuera de la fila de categorías, arriba a la derecha */}
-      <div className="flex justify-end mb-3">
-        <button
-          onClick={() => setShowSearch((s) => !s)}
-          className="w-11 h-11 shrink-0 rounded-2xl flex items-center justify-center transition-transform hover:-translate-y-0.5 cursor-pointer bg-transparent"
-          style={{ border: `1px solid ${tokens.border}`, color: tokens.text }}
-          aria-label="Buscar productos"
-        >
-          <Search className="size-[17px]" strokeWidth={1.8} />
-        </button>
-      </div>
+      {/* Buscador — se abre justo debajo del banner, antes de las categorías */}
+      {showSearch && (
+        <input
+          type="text"
+          autoFocus
+          placeholder="Buscar productos..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="mb-4"
+          style={inputStyle}
+        />
+      )}
 
       {/* Categorías en círculo */}
       <div className="flex gap-[18px] overflow-x-auto pt-2.5 pb-1 -mx-1 px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -264,18 +268,6 @@ export function ProductCatalog({
           />
         ))}
       </div>
-
-      {showSearch && (
-        <input
-          type="text"
-          autoFocus
-          placeholder="Buscar productos..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="mt-4"
-          style={inputStyle}
-        />
-      )}
 
       {/* Rejilla mixta */}
       {filtered.length > 0 ? (

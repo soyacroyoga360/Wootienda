@@ -14,6 +14,7 @@ import {
   Info,
   ExternalLink,
   Star,
+  Search,
 } from "lucide-react"
 
 // lucide-react no longer ships brand/social logos — inlined as plain SVGs.
@@ -196,6 +197,7 @@ function socialHref(value: string, base: string) {
 
 export function LandingLayout({ business }: LandingLayoutProps) {
   const [view, setView] = useState<"portal" | "catalog" | "info">("portal")
+  const [showSearch, setShowSearch] = useState(false)
 
   const T = getThemeTokens(business.theme, business.primary_color)
 
@@ -350,7 +352,7 @@ export function LandingLayout({ business }: LandingLayoutProps) {
   return (
     <div className="min-h-screen" style={{ ...rootStyle, background: T.bg, color: T.text }}>
       {/* 1. Banner que se funde con la página — el logo, centrado, vuelve al inicio */}
-      <div className="relative w-full h-[280px] md:h-[380px] flex items-center justify-center">
+      <div className="relative w-full h-[170px] md:h-[220px] flex items-center justify-center">
         {business.banner_url ? (
           <Image src={business.banner_url} alt={`Banner de ${business.name}`} fill className="object-cover" priority />
         ) : (
@@ -363,7 +365,7 @@ export function LandingLayout({ business }: LandingLayoutProps) {
         <button
           type="button"
           onClick={() => setView("portal")}
-          className="relative z-10 w-24 h-24 md:w-28 md:h-28 rounded-full overflow-hidden shadow-2xl border-4 cursor-pointer transition-transform hover:scale-105"
+          className="relative z-10 w-20 h-20 md:w-24 md:h-24 rounded-full overflow-hidden shadow-2xl border-4 cursor-pointer transition-transform hover:scale-105"
           style={{ borderColor: "rgba(255,255,255,.85)" }}
           aria-label="Ir al inicio"
         >
@@ -375,6 +377,18 @@ export function LandingLayout({ business }: LandingLayoutProps) {
             </div>
           )}
         </button>
+
+        {view === "catalog" && (
+          <button
+            type="button"
+            onClick={() => setShowSearch((s) => !s)}
+            className="absolute bottom-3 right-4 md:right-6 z-20 w-10 h-10 rounded-full bg-white shadow-lg flex items-center justify-center transition-transform hover:scale-105 cursor-pointer border-0"
+            style={{ color: "#1b1917" }}
+            aria-label="Buscar productos"
+          >
+            <Search className="size-[17px]" strokeWidth={1.8} />
+          </button>
+        )}
       </div>
 
       <main className="max-w-3xl mx-auto w-full px-6 md:px-8 pt-8">
@@ -386,6 +400,7 @@ export function LandingLayout({ business }: LandingLayoutProps) {
             whatsapp={business.whatsapp}
             theme={business.theme}
             businessEmail={business.email}
+            showSearch={showSearch}
             businessName={business.name}
             bannerUrl={business.banner_url}
             tokens={{ text: T.text, muted: T.muted, border: T.border, fade: T.fade, surface: T.surface, chipBg: T.chipBg, chipText: T.chipText }}
