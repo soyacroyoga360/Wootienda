@@ -24,6 +24,7 @@ interface ReviewsSectionProps {
   businessId: string
   initialReviews: ReviewData[]
   googleRating: GoogleRatingData | null
+  googleProfileUrl: string
   primaryColor: string
   tokens: { text: string; muted: string; border: string; surface: string }
 }
@@ -43,7 +44,7 @@ function StarRow({ rating, size = 14 }: { rating: number; size?: number }) {
   )
 }
 
-export function ReviewsSection({ businessId, initialReviews, googleRating, primaryColor, tokens }: ReviewsSectionProps) {
+export function ReviewsSection({ businessId, initialReviews, googleRating, googleProfileUrl, primaryColor, tokens }: ReviewsSectionProps) {
   const supabase = createClient()
   const [reviews, setReviews] = useState<ReviewData[]>(initialReviews)
   const [isFormOpen, setIsFormOpen] = useState(false)
@@ -128,17 +129,29 @@ export function ReviewsSection({ businessId, initialReviews, googleRating, prima
               </div>
             </a>
           ) : reviews.length > 0 ? (
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: tokens.muted }}>
-                {reviews.length} reseña{reviews.length === 1 ? "" : "s"}
-              </p>
-              <div className="flex items-center gap-1.5">
-                <span className="text-sm font-extrabold" style={{ color: tokens.text }}>
-                  {nativeAvg.toFixed(1)}
-                </span>
-                <StarRow rating={nativeAvg} />
+            <a
+              href={googleProfileUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-3 rounded-2xl p-3 pr-4 transition-transform hover:-translate-y-0.5"
+              style={{ background: tokens.surface, border: `1px solid ${tokens.border}` }}
+            >
+              <div className="size-9 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: primaryColor }}>
+                <Star className="size-4 fill-white text-white" />
               </div>
-            </div>
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: tokens.muted }}>
+                  {reviews.length} reseña{reviews.length === 1 ? "" : "s"}
+                </p>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-sm font-extrabold" style={{ color: tokens.text }}>
+                    {nativeAvg.toFixed(1)}
+                  </span>
+                  <StarRow rating={nativeAvg} />
+                  <ExternalLink className="size-3" style={{ color: tokens.muted }} />
+                </div>
+              </div>
+            </a>
           ) : (
             <p className="text-sm" style={{ color: tokens.muted }}>
               Aún no hay reseñas. ¡Sé el primero!

@@ -214,6 +214,15 @@ export function LandingLayout({ business }: LandingLayoutProps) {
   const displayRating = business.googleRating?.rating ?? nativeAvg
   const displayCount = business.googleRating?.userRatingCount ?? business.reviews.length
 
+  // The rating badge always links out to the real Google Business Profile —
+  // the linked place if there is one, otherwise a Maps search by name/location
+  // so people can still find and review the real listing.
+  const googleProfileUrl =
+    business.googleRating?.googleMapsUri ||
+    `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+      [business.name, business.city, business.country].filter(Boolean).join(", ")
+    )}`
+
   const fontFamily =
     business.typography === "inter"
       ? "var(--font-inter), system-ui, sans-serif"
@@ -341,10 +350,11 @@ export function LandingLayout({ business }: LandingLayoutProps) {
           )}
 
           {ratingSource === "native" && (
-            <button
-              type="button"
-              onClick={() => setView("reviews")}
-              className="flex items-center gap-3 bg-black/40 backdrop-blur-md px-4 py-2.5 rounded-xl border border-white/10 shadow-lg transition-transform hover:-translate-y-0.5 cursor-pointer"
+            <a
+              href={googleProfileUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-3 bg-black/40 backdrop-blur-md px-4 py-2.5 rounded-xl border border-white/10 shadow-lg transition-transform hover:-translate-y-0.5"
             >
               <div className="size-7 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: business.primary_color }}>
                 <Star className="size-3.5 fill-white text-white" />
@@ -362,7 +372,7 @@ export function LandingLayout({ business }: LandingLayoutProps) {
                   </div>
                 </div>
               </div>
-            </button>
+            </a>
           )}
 
           <Link href="/" target="_blank" className="text-xs text-white/70 hover:text-white transition-colors">
@@ -519,6 +529,7 @@ export function LandingLayout({ business }: LandingLayoutProps) {
             businessId={business.id}
             initialReviews={business.reviews}
             googleRating={business.googleRating}
+            googleProfileUrl={googleProfileUrl}
             primaryColor={business.primary_color}
             tokens={{ text: T.text, muted: T.muted, border: T.border, surface: T.surface }}
           />
