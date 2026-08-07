@@ -246,12 +246,6 @@ export function LandingLayout({ business }: LandingLayoutProps) {
       >
         <div className="absolute inset-0 bg-black/70 backdrop-blur-[2px]" />
 
-        <div className="relative z-10 w-full text-center">
-          <div className="inline-flex w-8 h-8 rounded-full bg-white/10 backdrop-blur-md items-center justify-center font-black text-white text-xs border border-white/10">
-            W
-          </div>
-        </div>
-
         <div className="relative z-10 flex flex-col items-center text-center max-w-md w-full space-y-8 my-auto">
           <div
             className="w-28 h-28 md:w-32 md:h-32 rounded-full shadow-2xl border-4 overflow-hidden relative bg-black/30 backdrop-blur-sm flex items-center justify-center"
