@@ -69,6 +69,28 @@ services:
             - admin
             - anon
 
+  # Public object reads must work with a bare URL and no client-supplied key
+  # (that's what makes a bucket "public" — getPublicUrl() returns a keyless
+  # URL, and a plain <img src> can't attach headers). This route is matched
+  # ahead of storage-v1-all below (Kong prefers the longer path match) and
+  # injects the anon key server-side so storage-api still sees an
+  # authenticated (anon-role) request.
+  - name: storage-v1-public
+    url: http://storage:5000/object/public/
+    routes:
+      - name: storage-v1-public-objects
+        strip_path: true
+        paths:
+          - /storage/v1/object/public/
+    plugins:
+      - name: cors
+      - name: request-transformer
+        config:
+          add:
+            headers:
+              - "apikey:${{SUPABASE_ANON_KEY}}"
+              - "Authorization:Bearer ${{SUPABASE_ANON_KEY}}"
+
   - name: storage-v1
     url: http://storage:5000/
     routes:
