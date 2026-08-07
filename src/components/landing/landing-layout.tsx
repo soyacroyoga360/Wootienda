@@ -235,8 +235,6 @@ export function LandingLayout({ business }: LandingLayoutProps) {
   const isFoodType = business.category === "restaurant"
   const mainTabLabel = isFoodType ? "Menú" : "Servicios"
 
-  const locationLabel = [business.city, business.country].filter(Boolean).join(", ")
-
   /* ---------------------------------------------------------------- PORTAL */
   if (view === "portal") {
     return (
@@ -349,54 +347,10 @@ export function LandingLayout({ business }: LandingLayoutProps) {
 
   /* ------------------------------------------------------ CATÁLOGO / INFO */
 
-  const identityBlock = (
-    <div className="flex flex-col gap-2.5">
-      <div className="flex items-center gap-3">
-        <div
-          className="w-13 h-13 md:w-14 md:h-14 shrink-0 rounded-full overflow-hidden relative"
-          style={{ border: `2px solid ${T.onBanner ? "rgba(255,255,255,.25)" : T.fade}`, width: 54, height: 54, boxShadow: T.onBanner ? "none" : "0 6px 18px rgba(0,0,0,.14)" }}
-        >
-          {business.logo_url ? (
-            <Image src={business.logo_url} alt={`Logo de ${business.name}`} fill className="object-cover" />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center font-bold text-lg uppercase" style={{ background: T.surface, color: T.text }}>
-              {business.name.substring(0, 2)}
-            </div>
-          )}
-        </div>
-        <div className="flex flex-col gap-1 min-w-0">
-          {locationLabel && (
-            <span className="text-[10px] font-bold uppercase tracking-[.18em] truncate" style={{ color: business.primary_color }}>
-              {locationLabel}
-            </span>
-          )}
-          <h1
-            className="text-[34px] md:text-[42px] leading-none tracking-tight"
-            style={{ fontFamily: "var(--font-display), Georgia, serif", color: T.onBanner ? "#fff" : T.text }}
-          >
-            {business.name}
-          </h1>
-        </div>
-      </div>
-      {business.description && (
-        <p
-          className="text-sm leading-relaxed max-w-md"
-          style={{ color: T.onBanner ? "rgba(255,255,255,.75)" : T.muted, textWrap: "pretty" as never }}
-        >
-          {business.description}
-        </p>
-      )}
-    </div>
-  )
-
-  const iconBtn =
-    "w-11 h-11 rounded-2xl flex items-center justify-center transition-transform hover:-translate-y-0.5"
-  const iconBtnStyle = { border: `1px solid ${T.border}`, color: T.text }
-
   return (
     <div className="min-h-screen" style={{ ...rootStyle, background: T.bg, color: T.text }}>
-      {/* 1. Banner que se funde con la página */}
-      <div className="relative w-full h-[280px] md:h-[380px]">
+      {/* 1. Banner que se funde con la página — el logo, centrado, vuelve al inicio */}
+      <div className="relative w-full h-[280px] md:h-[380px] flex items-center justify-center">
         {business.banner_url ? (
           <Image src={business.banner_url} alt={`Banner de ${business.name}`} fill className="object-cover" priority />
         ) : (
@@ -404,75 +358,26 @@ export function LandingLayout({ business }: LandingLayoutProps) {
         )}
         <div
           className="absolute inset-0"
-          style={{
-            background: T.onBanner
-              ? `linear-gradient(180deg, rgba(0,0,0,.15) 0%, rgba(0,0,0,.45) 45%, ${T.fade} 100%)`
-              : `linear-gradient(180deg, rgba(0,0,0,0) 45%, ${T.fade}d9 82%, ${T.fade} 100%)`,
-          }}
+          style={{ background: `linear-gradient(180deg, rgba(0,0,0,.25) 0%, rgba(0,0,0,.1) 55%, ${T.fade} 100%)` }}
         />
-        {T.onBanner && (
-          <div className="absolute left-0 right-0 bottom-5 px-6 md:px-8 max-w-3xl mx-auto w-full">{identityBlock}</div>
-        )}
+        <button
+          type="button"
+          onClick={() => setView("portal")}
+          className="relative z-10 w-24 h-24 md:w-28 md:h-28 rounded-full overflow-hidden shadow-2xl border-4 cursor-pointer transition-transform hover:scale-105"
+          style={{ borderColor: "rgba(255,255,255,.85)" }}
+          aria-label="Ir al inicio"
+        >
+          {business.logo_url ? (
+            <Image src={business.logo_url} alt={`Logo de ${business.name}`} fill className="object-cover" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center font-bold text-2xl uppercase" style={{ background: T.surface, color: T.text }}>
+              {business.name.substring(0, 2)}
+            </div>
+          )}
+        </button>
       </div>
 
-      <main className="max-w-3xl mx-auto w-full px-6 md:px-8">
-        {!T.onBanner && <div className="-mt-14 relative z-10">{identityBlock}</div>}
-
-        {/* 2. Contacto directo */}
-        <div className="flex gap-2.5 pt-5">
-          {business.whatsapp && (
-            <a
-              href={`https://wa.me/${business.whatsapp}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex-1 flex items-center justify-center gap-2 h-11 rounded-2xl text-[13px] font-bold transition-transform hover:-translate-y-0.5"
-              style={{ backgroundColor: T.ctaBg, color: T.ctaText }}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12.04 2c-5.46 0-9.9 4.44-9.9 9.9 0 1.75.46 3.45 1.32 4.95L2 22l5.3-1.38a9.86 9.86 0 0 0 4.73 1.2h.01c5.46 0 9.9-4.44 9.9-9.9 0-2.64-1.03-5.13-2.9-7A9.82 9.82 0 0 0 12.04 2Z" />
-              </svg>
-              WhatsApp
-            </a>
-          )}
-          {business.address && (
-            <button onClick={() => setView("info")} className={iconBtn} style={iconBtnStyle} aria-label="Ubicación">
-              <MapPin className="size-[17px]" strokeWidth={1.8} />
-            </button>
-          )}
-          {business.socials?.instagram && (
-            <a href={socialHref(business.socials.instagram, "https://instagram.com/")} target="_blank" rel="noreferrer" className={iconBtn} style={iconBtnStyle} aria-label="Instagram">
-              <IconInstagram className="size-[17px]" />
-            </a>
-          )}
-          {business.socials?.facebook && (
-            <a href={socialHref(business.socials.facebook, "https://facebook.com/")} target="_blank" rel="noreferrer" className={iconBtn} style={iconBtnStyle} aria-label="Facebook">
-              <IconFacebook className="size-[17px]" />
-            </a>
-          )}
-        </div>
-
-        {/* 3. Pestañas subrayadas */}
-        <div className="flex gap-6 pt-7 mt-6" style={{ borderBottom: `1px solid ${T.border}` }}>
-          {([
-            { id: "catalog", label: mainTabLabel },
-            { id: "info", label: "Información" },
-            { id: "portal", label: "Inicio" },
-          ] as const).map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setView(tab.id)}
-              className="pb-3 text-[13px] transition-colors cursor-pointer bg-transparent border-0"
-              style={
-                view === tab.id
-                  ? { fontWeight: 700, color: T.text, boxShadow: `inset 0 -2px 0 ${business.primary_color}` }
-                  : { fontWeight: 500, color: T.muted }
-              }
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-
+      <main className="max-w-3xl mx-auto w-full px-6 md:px-8 pt-8">
         {/* 4. Contenido */}
         {view === "catalog" && (
           <ProductCatalog

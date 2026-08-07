@@ -228,31 +228,8 @@ export function ProductCatalog({
 
   return (
     <div className="py-6">
-      {/* Categorías en círculo + buscador */}
-      <div className="flex items-center gap-3">
-        <div className="flex gap-[18px] overflow-x-auto pt-2.5 pb-1 -mx-1 px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          <CategoryCircle
-            id="all"
-            label="Todos"
-            image={bannerUrl}
-            active={selectedCategory.toLowerCase() === "all"}
-            primaryColor={primaryColor}
-            tokens={tokens}
-            onSelect={setSelectedCategory}
-          />
-          {categories.map((c) => (
-            <CategoryCircle
-              key={c.name}
-              id={c.name}
-              label={c.name}
-              image={c.image}
-              active={selectedCategory.toLowerCase() === c.name.toLowerCase()}
-              primaryColor={primaryColor}
-              tokens={tokens}
-              onSelect={setSelectedCategory}
-            />
-          ))}
-        </div>
+      {/* Buscador — fuera de la fila de categorías, arriba a la derecha */}
+      <div className="flex justify-end mb-3">
         <button
           onClick={() => setShowSearch((s) => !s)}
           className="w-11 h-11 shrink-0 rounded-2xl flex items-center justify-center transition-transform hover:-translate-y-0.5 cursor-pointer bg-transparent"
@@ -261,6 +238,31 @@ export function ProductCatalog({
         >
           <Search className="size-[17px]" strokeWidth={1.8} />
         </button>
+      </div>
+
+      {/* Categorías en círculo */}
+      <div className="flex gap-[18px] overflow-x-auto pt-2.5 pb-1 -mx-1 px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <CategoryCircle
+          id="all"
+          label="Todos"
+          image={bannerUrl}
+          active={selectedCategory.toLowerCase() === "all"}
+          primaryColor={primaryColor}
+          tokens={tokens}
+          onSelect={setSelectedCategory}
+        />
+        {categories.map((c) => (
+          <CategoryCircle
+            key={c.name}
+            id={c.name}
+            label={c.name}
+            image={c.image}
+            active={selectedCategory.toLowerCase() === c.name.toLowerCase()}
+            primaryColor={primaryColor}
+            tokens={tokens}
+            onSelect={setSelectedCategory}
+          />
+        ))}
       </div>
 
       {showSearch && (
