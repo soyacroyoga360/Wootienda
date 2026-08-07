@@ -2,12 +2,7 @@ import { NextResponse } from "next/server"
 import { requireBusinessPlan } from "@/lib/ai/plan"
 import { generateProductImage } from "@/lib/ai/products"
 import { GeminiError, IMAGE_MODEL } from "@/lib/ai/gemini"
-
-const EXT_BY_MIME: Record<string, string> = {
-  "image/png": "png",
-  "image/webp": "webp",
-  "image/jpeg": "jpg",
-}
+import { optimizeToWebp } from "@/lib/image"
 
 export async function POST(request: Request) {
   const gate = await requireBusinessPlan()
@@ -20,19 +15,18 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { base64, mimeType } = await generateProductImage({
+    const { base64 } = await generateProductImage({
       productName,
       description: typeof body?.description === "string" ? body.description.trim() : undefined,
       businessCategory: gate.business.category,
     })
 
-    const ext = EXT_BY_MIME[mimeType] || "jpg"
-    const path = `${gate.userId}/products/ai-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
-    const bytes = Buffer.from(base64, "base64")
+    const webpBytes = await optimizeToWebp(Buffer.from(base64, "base64"))
+    const path = `${gate.userId}/products/ai-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.webp`
 
     const { error: uploadError } = await gate.supabase.storage
       .from("business-assets")
-      .upload(path, bytes, { contentType: mimeType, upsert: false })
+      .upload(path, webpBytes, { contentType: "image/webp", upsert: false })
 
     if (uploadError) throw uploadError
 
