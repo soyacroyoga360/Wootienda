@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { Plus_Jakarta_Sans, Inter, Outfit } from "next/font/google"
+import { Plus_Jakarta_Sans, Inter, Outfit, Instrument_Serif } from "next/font/google"
 import { ThemeProvider } from "@/components/providers/theme-provider"
 import { Toaster } from "sonner"
 import "./globals.css"
@@ -23,6 +23,13 @@ const outfit = Outfit({
   display: "swap",
   variable: "--font-outfit",
   weight: ["300", "400", "500", "600", "700", "800"],
+})
+
+const instrumentSerif = Instrument_Serif({
+  subsets: ["latin"],
+  weight: "400",
+  display: "swap",
+  variable: "--font-display",
 })
 
 export const metadata: Metadata = {
@@ -57,7 +64,7 @@ export default function RootLayout({
   return (
     <html
       lang="es"
-      className={`${plusJakarta.variable} ${inter.variable} ${outfit.variable} h-full antialiased`}
+      className={`${plusJakarta.variable} ${inter.variable} ${outfit.variable} ${instrumentSerif.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <body 
