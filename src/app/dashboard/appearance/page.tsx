@@ -22,9 +22,12 @@ import {
   Check,
   Sparkles,
   Loader2,
+  UploadCloud,
   X,
 } from "lucide-react"
 import Image from "next/image"
+
+const MAX_UPLOAD_BYTES = 1024 * 1024
 
 const PRESET_BANNERS = [
   { url: "https://images.unsplash.com/photo-1497935586351-b67a49e012bf?q=80&w=800", label: "Cafetería Rústica" },
@@ -75,15 +78,20 @@ export default function AppearancePage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [businessId, setBusinessId] = useState<string | null>(null)
+  const [userId, setUserId] = useState<string | null>(null)
   const [userPlan, setUserPlan] = useState("free")
-  
+
   // State variables mapped to DB
   const [bannerUrl, setBannerUrl] = useState("")
   const [logoUrl, setLogoUrl] = useState("")
   const [primaryColor, setPrimaryColor] = useState("#EE1D6D")
   const [theme, setTheme] = useState("claro")
   const [typography, setTypography] = useState("default")
-  
+
+  // Upload state
+  const [isUploadingBanner, setIsUploadingBanner] = useState(false)
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false)
+
   // Upgrade Modal
   const [isUpgradeOpen, setIsUpgradeOpen] = useState(false)
   const [selectedProTheme, setSelectedProTheme] = useState("")
@@ -94,6 +102,7 @@ export default function AppearancePage() {
       try {
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) return
+        setUserId(user.id)
 
         const { data: business } = await supabase
           .from("businesses")
@@ -142,11 +151,81 @@ export default function AppearancePage() {
       if (error) throw error
 
       toast.success("Apariencia guardada correctamente. ¡Revisa tu landing!")
-    } catch (err: any) {
+    } catch (err) {
       console.error("Error saving appearance:", err)
-      toast.error(`Error al guardar: ${err.message || "Intenta de nuevo."}`)
+      const message = err instanceof Error ? err.message : "Intenta de nuevo."
+      toast.error(`Error al guardar: ${message}`)
     } finally {
       setIsSaving(false)
+    }
+  }
+
+  const uploadBusinessAsset = async (file: File, folder: "banner" | "logo") => {
+    if (!userId) {
+      toast.error("No se encontró tu sesión, recarga la página e intenta de nuevo")
+      return null
+    }
+    if (!file.type.startsWith("image/")) {
+      toast.error("Selecciona un archivo de imagen válido")
+      return null
+    }
+    if (file.size > MAX_UPLOAD_BYTES) {
+      toast.error("La imagen supera 1MB. Elige una más liviana o comprímela antes de subirla.")
+      return null
+    }
+
+    const ext = file.name.split(".").pop()?.toLowerCase() || "jpg"
+    const path = `${userId}/${folder}/${folder}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
+
+    const { error: uploadError } = await supabase.storage
+      .from("business-assets")
+      .upload(path, file, { contentType: file.type, upsert: false })
+    if (uploadError) throw uploadError
+
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from("business-assets").getPublicUrl(path)
+
+    return publicUrl
+  }
+
+  const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = ""
+    if (!file) return
+
+    setIsUploadingBanner(true)
+    try {
+      const publicUrl = await uploadBusinessAsset(file, "banner")
+      if (publicUrl) {
+        setBannerUrl(publicUrl)
+        toast.success("Portada subida con éxito")
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Error al subir la portada"
+      toast.error(message)
+    } finally {
+      setIsUploadingBanner(false)
+    }
+  }
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = ""
+    if (!file) return
+
+    setIsUploadingLogo(true)
+    try {
+      const publicUrl = await uploadBusinessAsset(file, "logo")
+      if (publicUrl) {
+        setLogoUrl(publicUrl)
+        toast.success("Logo subido con éxito")
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Error al subir el logo"
+      toast.error(message)
+    } finally {
+      setIsUploadingLogo(false)
     }
   }
 
@@ -220,16 +299,40 @@ export default function AppearancePage() {
             </div>
 
             <div className="space-y-6">
-              {/* Banner input */}
+              {/* Banner upload */}
               <div className="space-y-3">
-                <Label htmlFor="banner-input">URL de la Imagen de Portada (Banner)</Label>
-                <Input
-                  id="banner-input"
-                  placeholder="https://images.unsplash.com/... o cualquier enlace directo"
-                  value={bannerUrl}
-                  onChange={(e) => setBannerUrl(e.target.value)}
-                />
-                
+                <Label>Imagen de Portada (Banner)</Label>
+                {bannerUrl ? (
+                  <div className="relative w-full aspect-video rounded-xl overflow-hidden border border-border/60 bg-secondary/30">
+                    <Image src={bannerUrl} alt="Portada" fill className="object-cover" sizes="600px" />
+                    <button
+                      type="button"
+                      onClick={() => setBannerUrl("")}
+                      className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 hover:bg-black/80 text-white transition-colors cursor-pointer border-0"
+                      aria-label="Quitar portada"
+                    >
+                      <X className="size-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-border rounded-xl py-8 cursor-pointer hover:border-primary/50 hover:bg-secondary/20 transition-colors">
+                    {isUploadingBanner ? (
+                      <Loader2 className="size-6 animate-spin text-muted-foreground" />
+                    ) : (
+                      <UploadCloud className="size-6 text-muted-foreground" />
+                    )}
+                    <span className="text-sm font-medium">{isUploadingBanner ? "Subiendo..." : "Subir portada"}</span>
+                    <span className="text-xs text-muted-foreground">JPG, PNG o WebP — máx. 1MB</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleBannerUpload}
+                      disabled={isUploadingBanner}
+                    />
+                  </label>
+                )}
+
                 {/* Banner presets */}
                 <div>
                   <p className="text-xs text-muted-foreground mb-2">Selecciona un fondo rápido para tu portada:</p>
@@ -256,15 +359,42 @@ export default function AppearancePage() {
                 </div>
               </div>
 
-              {/* Logo input */}
+              {/* Logo upload */}
               <div className="space-y-3 pt-4 border-t border-border/40">
-                <Label htmlFor="logo-input">URL del Logo del Negocio</Label>
-                <Input
-                  id="logo-input"
-                  placeholder="https://images.unsplash.com/... o cualquier enlace directo"
-                  value={logoUrl}
-                  onChange={(e) => setLogoUrl(e.target.value)}
-                />
+                <Label>Logo del Negocio</Label>
+                <div className="flex items-center gap-4">
+                  {logoUrl ? (
+                    <div className="relative size-20 shrink-0 rounded-full overflow-hidden border border-border/60 bg-secondary/30">
+                      <Image src={logoUrl} alt="Logo" fill className="object-cover" sizes="80px" />
+                      <button
+                        type="button"
+                        onClick={() => setLogoUrl("")}
+                        className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 hover:opacity-100 transition-opacity cursor-pointer border-0"
+                        aria-label="Quitar logo"
+                      >
+                        <X className="size-4 text-white" />
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="flex flex-col items-center justify-center gap-1 size-20 shrink-0 rounded-full border-2 border-dashed border-border cursor-pointer hover:border-primary/50 hover:bg-secondary/20 transition-colors">
+                      {isUploadingLogo ? (
+                        <Loader2 className="size-5 animate-spin text-muted-foreground" />
+                      ) : (
+                        <UploadCloud className="size-5 text-muted-foreground" />
+                      )}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleLogoUpload}
+                        disabled={isUploadingLogo}
+                      />
+                    </label>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    {isUploadingLogo ? "Subiendo..." : "JPG, PNG o WebP — máx. 1MB"}
+                  </p>
+                </div>
 
                 {/* Logo presets */}
                 <div>
