@@ -2,7 +2,6 @@
 
 import { useState } from "react"
 import Image from "next/image"
-import Link from "next/link"
 import { ProductCatalog } from "./product-catalog"
 import type { ReviewData, GoogleRatingData } from "./reviews-section"
 import {
@@ -339,9 +338,9 @@ export function LandingLayout({ business }: LandingLayoutProps) {
             </a>
           )}
 
-          <Link href="/" target="_blank" className="text-xs text-white/70 hover:text-white transition-colors">
-            ¿Quieres tu Menú <span className="font-bold underline">Wootienda</span>? Clic Aquí
-          </Link>
+          <a href="https://wa.link/4p63do" target="_blank" rel="noreferrer" className="text-xs text-white/70 hover:text-white transition-colors">
+            ¿Quieres tu propia <span className="font-bold underline">Wootienda</span>? Clic Aquí
+          </a>
         </div>
       </div>
     )
@@ -391,7 +390,7 @@ export function LandingLayout({ business }: LandingLayoutProps) {
         )}
       </div>
 
-      <main className="max-w-3xl mx-auto w-full px-6 md:px-8 pt-8">
+      <main className="max-w-3xl mx-auto w-full px-6 md:px-8">
         {/* 4. Contenido */}
         {view === "catalog" && (
           <ProductCatalog
@@ -496,9 +495,9 @@ export function LandingLayout({ business }: LandingLayoutProps) {
         )}
 
         <footer className="py-10 text-center">
-          <Link href="/" target="_blank" className="text-[11px]" style={{ color: T.muted }}>
-            Creado con <strong style={{ color: T.text }}>Wootienda</strong>
-          </Link>
+          <a href="https://wa.link/4p63do" target="_blank" rel="noreferrer" className="text-[11px]" style={{ color: T.muted }}>
+            ¿Quieres tu propia <strong style={{ color: T.text }}>Wootienda</strong>? Clic Aquí
+          </a>
         </footer>
       </main>
     </div>
