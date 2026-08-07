@@ -99,9 +99,9 @@ export function ReviewsSection({ businessId, initialReviews, googleRating, googl
       {/* Resumen */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-4">
-          {googleRating ? (
+          {googleRating || reviews.length > 0 ? (
             <a
-              href={googleRating.googleMapsUri}
+              href={googleRating?.googleMapsUri || googleProfileUrl}
               target="_blank"
               rel="noreferrer"
               className="flex items-center gap-3 rounded-2xl p-3 pr-4 transition-transform hover:-translate-y-0.5"
@@ -117,37 +117,13 @@ export function ReviewsSection({ businessId, initialReviews, googleRating, googl
               </div>
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: tokens.muted }}>
-                  Google — {googleRating.userRatingCount} reseñas
+                  {googleRating?.userRatingCount ?? reviews.length} reseña{(googleRating?.userRatingCount ?? reviews.length) === 1 ? "" : "s"}
                 </p>
                 <div className="flex items-center gap-1.5">
                   <span className="text-sm font-extrabold" style={{ color: tokens.text }}>
-                    {googleRating.rating.toFixed(1)}
+                    {(googleRating?.rating ?? nativeAvg).toFixed(1)}
                   </span>
-                  <StarRow rating={googleRating.rating} />
-                  <ExternalLink className="size-3" style={{ color: tokens.muted }} />
-                </div>
-              </div>
-            </a>
-          ) : reviews.length > 0 ? (
-            <a
-              href={googleProfileUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center gap-3 rounded-2xl p-3 pr-4 transition-transform hover:-translate-y-0.5"
-              style={{ background: tokens.surface, border: `1px solid ${tokens.border}` }}
-            >
-              <div className="size-9 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: primaryColor }}>
-                <Star className="size-4 fill-white text-white" />
-              </div>
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: tokens.muted }}>
-                  {reviews.length} reseña{reviews.length === 1 ? "" : "s"}
-                </p>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-sm font-extrabold" style={{ color: tokens.text }}>
-                    {nativeAvg.toFixed(1)}
-                  </span>
-                  <StarRow rating={nativeAvg} />
+                  <StarRow rating={googleRating?.rating ?? nativeAvg} />
                   <ExternalLink className="size-3" style={{ color: tokens.muted }} />
                 </div>
               </div>
