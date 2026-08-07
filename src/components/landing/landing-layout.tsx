@@ -4,7 +4,7 @@ import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { ProductCatalog } from "./product-catalog"
-import { ReviewsSection, type ReviewData, type GoogleRatingData } from "./reviews-section"
+import type { ReviewData, GoogleRatingData } from "./reviews-section"
 import {
   MapPin,
   Globe,
@@ -195,7 +195,7 @@ function socialHref(value: string, base: string) {
 }
 
 export function LandingLayout({ business }: LandingLayoutProps) {
-  const [view, setView] = useState<"portal" | "catalog" | "info" | "reviews">("portal")
+  const [view, setView] = useState<"portal" | "catalog" | "info">("portal")
 
   const T = getThemeTokens(business.theme, business.primary_color)
 
@@ -461,7 +461,6 @@ export function LandingLayout({ business }: LandingLayoutProps) {
         <div className="flex gap-6 pt-7 mt-6" style={{ borderBottom: `1px solid ${T.border}` }}>
           {([
             { id: "catalog", label: mainTabLabel },
-            { id: "reviews", label: "Reseñas" },
             { id: "info", label: "Información" },
             { id: "portal", label: "Inicio" },
           ] as const).map((tab) => (
@@ -491,15 +490,6 @@ export function LandingLayout({ business }: LandingLayoutProps) {
             businessName={business.name}
             bannerUrl={business.banner_url}
             tokens={{ text: T.text, muted: T.muted, border: T.border, fade: T.fade, surface: T.surface, chipBg: T.chipBg, chipText: T.chipText }}
-          />
-        )}
-
-        {view === "reviews" && (
-          <ReviewsSection
-            businessId={business.id}
-            initialReviews={business.reviews}
-            primaryColor={business.primary_color}
-            tokens={{ text: T.text, muted: T.muted, border: T.border, surface: T.surface }}
           />
         )}
 
