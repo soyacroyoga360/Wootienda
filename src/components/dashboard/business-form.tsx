@@ -24,6 +24,7 @@ import {
   AtSign,
   Video,
   Share2,
+  Star,
 } from "lucide-react"
 
 const businessSchema = z.object({
@@ -43,6 +44,7 @@ const businessSchema = z.object({
   twitter: z.string().optional(),
   youtube: z.string().optional(),
   telegram: z.string().optional(),
+  googlePlaceId: z.string().optional(),
 })
 
 type BusinessFormData = z.infer<typeof businessSchema>
@@ -75,6 +77,7 @@ export function BusinessForm() {
       twitter: "",
       youtube: "",
       telegram: "",
+      googlePlaceId: "",
     },
   })
 
@@ -128,6 +131,7 @@ export function BusinessForm() {
             twitter: socialMap["twitter"] || socialMap["x"] || "",
             youtube: socialMap["youtube"] || "",
             telegram: socialMap["telegram"] || "",
+            googlePlaceId: business.google_place_id || "",
           })
         }
       } catch (err) {
@@ -168,6 +172,7 @@ export function BusinessForm() {
             country: data.country,
             schedule: data.schedule,
             whatsapp: data.whatsapp,
+            google_place_id: data.googlePlaceId?.trim() || null,
           })
           .select("id")
           .single()
@@ -189,6 +194,7 @@ export function BusinessForm() {
             country: data.country,
             schedule: data.schedule,
             whatsapp: data.whatsapp,
+            google_place_id: data.googlePlaceId?.trim() || null,
           })
           .eq("id", business.id)
 
@@ -223,9 +229,10 @@ export function BusinessForm() {
 
       toast.success("Negocio actualizado correctamente")
       reset(data)
-    } catch (err: any) {
+    } catch (err) {
       console.error("Error saving business details:", err)
-      toast.error(`Error al guardar: ${err.message || "Intenta de nuevo."}`)
+      const message = err instanceof Error ? err.message : "Intenta de nuevo."
+      toast.error(`Error al guardar: ${message}`)
     } finally {
       setIsLoading(false)
     }
@@ -498,6 +505,42 @@ export function BusinessForm() {
               />
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Google Business Profile */}
+      <section>
+        <div className="flex items-center gap-3 mb-5">
+          <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center">
+            <Star className="size-5" />
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold">Google Business Profile</h2>
+            <p className="text-sm text-muted-foreground">
+              Vincula tu ficha de Google para mostrar tu puntaje y reseñas reales en la landing
+            </p>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="googlePlaceId">Place ID de Google</Label>
+          <Input
+            id="googlePlaceId"
+            placeholder="Ej: ChIJN1t_tDeuEmsRUsoyG83frY4"
+            {...register("googlePlaceId")}
+          />
+          <p className="text-xs text-muted-foreground">
+            Búscalo con la{" "}
+            <a
+              href="https://developers.google.com/maps/documentation/places/web-service/place-id#find-id"
+              target="_blank"
+              rel="noreferrer"
+              className="text-primary hover:underline"
+            >
+              herramienta de Google para encontrar tu Place ID
+            </a>
+            . Si lo dejas vacío, se mostrarán las reseñas que te dejen aquí en Wootienda.
+          </p>
         </div>
       </section>
 

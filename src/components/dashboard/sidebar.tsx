@@ -12,6 +12,7 @@ import {
   Store,
   Package,
   Palette,
+  MessageSquareText,
   BookOpenText,
   Settings,
   LogOut,
@@ -41,6 +42,11 @@ const navItems = [
     label: "Apariencia",
     href: "/dashboard/appearance",
     icon: Palette,
+  },
+  {
+    label: "Reseñas",
+    href: "/dashboard/reviews",
+    icon: MessageSquareText,
   },
   {
     label: "Blog",

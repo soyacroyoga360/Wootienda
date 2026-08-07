@@ -146,6 +146,23 @@ create trigger products_updated_at
   before update on public.products
   for each row execute function public.update_updated_at();
 
+-- Google Business Profile link, for pulling the real rating on the landing page
+alter table public.businesses add column if not exists google_place_id varchar(255);
+
+-- Reviews left directly by visitors on the public landing page
+create table if not exists public.reviews (
+  id uuid primary key default uuid_generate_v4(),
+  business_id uuid not null references public.businesses(id) on delete cascade,
+  customer_name varchar(100) not null,
+  rating smallint not null,
+  comment text,
+  created_at timestamptz default now(),
+  constraint reviews_rating_range check (rating between 1 and 5)
+);
+
+create index if not exists idx_reviews_business on public.reviews(business_id);
+create index if not exists idx_reviews_business_date on public.reviews(business_id, created_at desc);
+
 -- Social links
 create table if not exists public.social_links (
   id uuid primary key default uuid_generate_v4(),
@@ -475,6 +492,7 @@ alter table public.business_stats enable row level security;
 alter table public.slug_history enable row level security;
 alter table public.blog_posts enable row level security;
 alter table public.ai_generations enable row level security;
+alter table public.reviews enable row level security;
 
 drop policy if exists "Businesses: public read active" on public.businesses;
 create policy "Businesses: public read active"
@@ -594,6 +612,30 @@ create policy "AI generations: user own data"
   on public.ai_generations for all
   using ((select auth.uid()) = user_id)
   with check ((select auth.uid()) = user_id);
+
+drop policy if exists "Reviews: public read active business" on public.reviews;
+create policy "Reviews: public read active business"
+  on public.reviews for select
+  using (exists (
+    select 1 from public.businesses b
+    where b.id = business_id and b.is_active = true
+  ));
+
+drop policy if exists "Reviews: public insert active business" on public.reviews;
+create policy "Reviews: public insert active business"
+  on public.reviews for insert
+  with check (exists (
+    select 1 from public.businesses b
+    where b.id = business_id and b.is_active = true
+  ));
+
+drop policy if exists "Reviews: owner delete" on public.reviews;
+create policy "Reviews: owner delete"
+  on public.reviews for delete
+  using (exists (
+    select 1 from public.businesses b
+    where b.id = business_id and b.user_id = (select auth.uid())
+  ));
 
 -- Storage bucket and policies
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)

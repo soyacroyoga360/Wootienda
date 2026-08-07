@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation"
 import type { Metadata } from "next"
 import { createClient } from "@/lib/supabase/server"
-import { LandingLayout } from "@/components/landing/landing-layout"
+import { LandingLayout, type BusinessDetails } from "@/components/landing/landing-layout"
+import { getGooglePlaceRating } from "@/lib/google-places"
 
 interface PageProps {
   params: Promise<{ slug: string }>
@@ -43,6 +44,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 // Mock data for visual development since the database might be empty
 const MOCK_BUSINESS = {
+  id: "00000000-0000-0000-0000-000000000000",
   name: "Café Sierra",
   description: "El mejor café de especialidad tostado en la ciudad. Descubre nuestra selección de granos de origen único, métodos de extracción y repostería artesanal.",
   banner_url: "https://images.unsplash.com/photo-1497935586351-b67a49e012bf?q=80&w=2071&auto=format&fit=crop",
@@ -97,13 +99,30 @@ const MOCK_BUSINESS = {
       image_url: "https://images.unsplash.com/photo-1530610476181-d83430b64dcd?q=80&w=1000&auto=format&fit=crop",
       category: "Repostería",
     }
-  ]
+  ],
+  reviews: [
+    {
+      id: "r1",
+      customer_name: "María López",
+      rating: 5,
+      comment: "El mejor café de la zona, el cold brew es espectacular.",
+      created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+    },
+    {
+      id: "r2",
+      customer_name: "Carlos Ruiz",
+      rating: 4,
+      comment: "Muy buena atención y ambiente acogedor.",
+      created_at: new Date(Date.now() - 12 * 24 * 60 * 60 * 1000).toISOString(),
+    },
+  ],
+  googleRating: null,
 }
 
 export default async function BusinessLandingPage({ params }: PageProps) {
   const { slug } = await params
   
-  let business = null
+  let business: BusinessDetails | null = null
   let isMock = false
 
   try {
@@ -136,7 +155,21 @@ export default async function BusinessLandingPage({ params }: PageProps) {
         socials[link.platform] = link.url
       })
 
+      // 4. Cargar reseñas dejadas en la landing
+      const { data: dbReviews } = await supabase
+        .from("reviews")
+        .select("id, customer_name, rating, comment, created_at")
+        .eq("business_id", dbBusiness.id)
+        .order("created_at", { ascending: false })
+        .limit(50)
+
+      // 5. Si el negocio tiene Google Business Profile vinculado, traer su rating real
+      const googleRating = dbBusiness.google_place_id
+        ? await getGooglePlaceRating(dbBusiness.google_place_id)
+        : null
+
       business = {
+        id: dbBusiness.id,
         name: dbBusiness.business_name,
         description: dbBusiness.description || "¡Bienvenido a nuestro negocio!",
         banner_url: dbBusiness.banner_url || "https://images.unsplash.com/photo-1497935586351-b67a49e012bf?q=80&w=2071&auto=format&fit=crop",
@@ -167,7 +200,9 @@ export default async function BusinessLandingPage({ params }: PageProps) {
           price: Number(p.price) || 0,
           image_url: p.image_url || "",
           category: p.category || "General",
-        }))
+        })),
+        reviews: dbReviews || [],
+        googleRating,
       }
     }
   } catch (err) {
@@ -184,5 +219,5 @@ export default async function BusinessLandingPage({ params }: PageProps) {
     }
   }
 
-  return <LandingLayout business={business as any} />
+  return <LandingLayout business={business} />
 }
