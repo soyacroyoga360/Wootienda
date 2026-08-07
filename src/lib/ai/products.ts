@@ -1,4 +1,4 @@
-import { generateJSON, generateImageBytes } from "./gemini"
+import { generateJSON, generateJSONFromFile, generateImageBytes } from "./gemini"
 
 export interface ProductDescriptionInput {
   productName: string
@@ -57,4 +57,45 @@ No text, no watermarks, no logos, photorealistic.`
 
 export function generateProductImage(input: ProductImageInput) {
   return generateImageBytes(buildImagePrompt(input))
+}
+
+export interface ExtractedProduct {
+  name: string
+  description?: string
+  price?: number
+  category?: string
+}
+
+const CATALOG_SCHEMA = {
+  type: "OBJECT",
+  properties: {
+    products: {
+      type: "ARRAY",
+      items: {
+        type: "OBJECT",
+        properties: {
+          name: { type: "STRING" },
+          description: { type: "STRING" },
+          price: { type: "NUMBER" },
+          category: { type: "STRING" },
+        },
+        required: ["name"],
+      },
+    },
+  },
+  required: ["products"],
+}
+
+const CATALOG_PROMPT = `Extrae todos los productos de este documento (puede ser un menú, catálogo o lista de precios).
+Para cada producto identifica: nombre, descripción breve si está disponible, precio (solo el número entero, sin símbolos ni puntos ni comas de miles) si está visible, y la categoría o sección a la que pertenece.
+Si un campo no está visible para un producto, simplemente omítelo — no inventes datos que no estén en el documento. No inventes productos que no aparezcan.`
+
+export async function extractProductsFromDocument(fileBase64: string, mimeType: string): Promise<ExtractedProduct[]> {
+  const result = await generateJSONFromFile<{ products: ExtractedProduct[] }>(
+    fileBase64,
+    mimeType,
+    CATALOG_PROMPT,
+    CATALOG_SCHEMA
+  )
+  return result.products || []
 }

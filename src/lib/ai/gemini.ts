@@ -51,6 +51,47 @@ export async function generateJSON<T>(prompt: string, schema: object): Promise<T
   return JSON.parse(text) as T
 }
 
+/**
+ * Gemini reads documents (PDF pages get treated as images internally, per
+ * usageMetadata) natively — no separate PDF-to-text/markdown step needed.
+ * Confirmed working with the cheap lite model on a real multi-item menu PDF.
+ */
+export async function generateJSONFromFile<T>(
+  fileBase64: string,
+  mimeType: string,
+  prompt: string,
+  schema: object
+): Promise<T> {
+  const res = await fetch(
+    `${GEMINI_API_BASE}/models/${TEXT_MODEL}:generateContent?key=${apiKey()}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [
+          {
+            role: "user",
+            parts: [{ inlineData: { mimeType, data: fileBase64 } }, { text: prompt }],
+          },
+        ],
+        generationConfig: {
+          responseMimeType: "application/json",
+          responseSchema: schema,
+        },
+      }),
+    }
+  )
+
+  if (!res.ok) {
+    throw new GeminiError(res.status, await res.text().catch(() => ""))
+  }
+
+  const data = await res.json()
+  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text
+  if (!text) throw new Error("Gemini no devolvió contenido")
+  return JSON.parse(text) as T
+}
+
 export async function generateImageBytes(prompt: string): Promise<{ base64: string; mimeType: string }> {
   const res = await fetch(
     `${GEMINI_API_BASE}/models/${IMAGE_MODEL}:generateContent?key=${apiKey()}`,

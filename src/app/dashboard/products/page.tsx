@@ -65,6 +65,7 @@ const MAX_CSV_ROWS = 40
 // Stay well clear of the Gemini free-tier RPM ceiling between per-row AI calls.
 const AI_ROW_DELAY_MS = 2500
 const MAX_UPLOAD_BYTES = 1024 * 1024
+const MAX_PDF_BYTES = 8 * 1024 * 1024
 
 interface CsvRow {
   name: string
@@ -115,6 +116,15 @@ function parseCsvFile(file: File): Promise<CsvRow[]> {
   })
 }
 
+function readFileAsBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve((reader.result as string).split(",")[1] || "")
+    reader.onerror = () => reject(reader.error)
+    reader.readAsDataURL(file)
+  })
+}
+
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 export default function ProductsPage() {
@@ -152,7 +162,7 @@ export default function ProductsPage() {
   // Manual image upload state
   const [isUploadingImage, setIsUploadingImage] = useState(false)
 
-  // CSV import states
+  // CSV/PDF import states
   const [isCsvModalOpen, setIsCsvModalOpen] = useState(false)
   const [csvFileName, setCsvFileName] = useState("")
   const [csvRows, setCsvRows] = useState<CsvRow[]>([])
@@ -160,6 +170,7 @@ export default function ProductsPage() {
   const [csvGenerateImages, setCsvGenerateImages] = useState(false)
   const [isImporting, setIsImporting] = useState(false)
   const [importProgress, setImportProgress] = useState<ImportRowStatus[]>([])
+  const [isParsingPdf, setIsParsingPdf] = useState(false)
 
   const openUpgradeModal = (feature: string) => {
     setUpgradeFeature(feature)
@@ -430,10 +441,10 @@ export default function ProductsPage() {
     }
   }
 
-  // CSV import
+  // CSV/PDF import
   const openCsvModal = () => {
     if (!isBusinessPlan) {
-      openUpgradeModal("La importación de productos desde CSV")
+      openUpgradeModal("La importación de productos desde CSV o PDF")
       return
     }
     setCsvFileName("")
@@ -465,6 +476,63 @@ export default function ProductsPage() {
     } catch (err) {
       console.error("Error parsing CSV:", err)
       toast.error("No se pudo leer el archivo CSV")
+    }
+  }
+
+  const handlePdfFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = ""
+    if (!file) return
+
+    if (file.size > MAX_PDF_BYTES) {
+      toast.error("El PDF supera 8MB. Usa un archivo más liviano.")
+      return
+    }
+
+    setIsParsingPdf(true)
+    try {
+      const fileBase64 = await readFileAsBase64(file)
+      const res = await fetch("/api/ai/parse-catalog-pdf", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fileBase64, mimeType: file.type || "application/pdf" }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Error leyendo el PDF")
+
+      const extracted = (data.products || []) as Array<{
+        name: string
+        description?: string
+        price?: number
+        category?: string
+      }>
+      const rows: CsvRow[] = extracted
+        .filter((p) => p.name?.trim())
+        .map((p) => ({
+          name: p.name.trim(),
+          description: p.description?.trim() || "",
+          category: p.category?.trim() || "",
+          price: typeof p.price === "number" && p.price > 0 ? Math.round(p.price) : null,
+        }))
+
+      if (rows.length === 0) {
+        toast.error("No se encontraron productos en el PDF")
+        return
+      }
+
+      const truncated = rows.slice(0, MAX_CSV_ROWS)
+      if (rows.length > MAX_CSV_ROWS) {
+        toast.warning(`Se encontraron ${rows.length} productos, se importarán solo los primeros ${MAX_CSV_ROWS}.`)
+      }
+      setCsvFileName(file.name)
+      setCsvRows(truncated)
+      setImportProgress(truncated.map(() => ({ status: "pending" })))
+      toast.success(`${truncated.length} producto${truncated.length === 1 ? "" : "s"} detectado${truncated.length === 1 ? "" : "s"} en el PDF`)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "No se pudo leer el PDF"
+      toast.error(message)
+    } finally {
+      setIsParsingPdf(false)
     }
   }
 
@@ -575,7 +643,7 @@ export default function ProductsPage() {
         <div className="flex items-center gap-2 shrink-0">
           <Button size="lg" variant="outline" onClick={openCsvModal}>
             <FileSpreadsheet className="size-4" />
-            Importar CSV
+            Importar CSV/PDF
             {!isBusinessPlan && <Crown className="size-3.5 text-pink-500" />}
           </Button>
           <Button size="lg" onClick={openAddModal}>
@@ -1001,7 +1069,7 @@ export default function ProductsPage() {
             <div className="flex items-center justify-between px-6 py-4 border-b border-border">
               <h3 className="text-xl font-bold flex items-center gap-2">
                 <FileSpreadsheet className="size-5 text-primary" />
-                Importar productos desde CSV
+                Importar productos
               </h3>
               <button
                 onClick={() => !isImporting && setIsCsvModalOpen(false)}
@@ -1015,16 +1083,36 @@ export default function ProductsPage() {
             <div className="flex-1 overflow-y-auto p-6 space-y-5">
               {csvRows.length === 0 ? (
                 <>
-                  <label className="flex flex-col items-center justify-center gap-3 border-2 border-dashed border-border rounded-2xl py-12 cursor-pointer hover:border-primary/50 hover:bg-secondary/20 transition-colors">
-                    <UploadCloud className="size-8 text-muted-foreground" />
-                    <span className="text-sm font-semibold">Selecciona tu archivo CSV</span>
-                    <span className="text-xs text-muted-foreground">o arrástralo aquí</span>
-                    <input type="file" accept=".csv,text/csv" className="hidden" onChange={handleCsvFileChange} />
-                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <label className="flex flex-col items-center justify-center gap-3 border-2 border-dashed border-border rounded-2xl py-10 cursor-pointer hover:border-primary/50 hover:bg-secondary/20 transition-colors">
+                      <FileSpreadsheet className="size-8 text-muted-foreground" />
+                      <span className="text-sm font-semibold">Subir CSV</span>
+                      <span className="text-xs text-muted-foreground">o arrástralo aquí</span>
+                      <input type="file" accept=".csv,text/csv" className="hidden" onChange={handleCsvFileChange} />
+                    </label>
+
+                    <label className="flex flex-col items-center justify-center gap-3 border-2 border-dashed border-border rounded-2xl py-10 cursor-pointer hover:border-primary/50 hover:bg-secondary/20 transition-colors">
+                      {isParsingPdf ? (
+                        <Loader2 className="size-8 text-muted-foreground animate-spin" />
+                      ) : (
+                        <UploadCloud className="size-8 text-muted-foreground" />
+                      )}
+                      <span className="text-sm font-semibold">{isParsingPdf ? "Leyendo con IA..." : "Subir PDF"}</span>
+                      <span className="text-xs text-muted-foreground">menú o catálogo — máx. 8MB</span>
+                      <input
+                        type="file"
+                        accept=".pdf,application/pdf"
+                        className="hidden"
+                        onChange={handlePdfFileChange}
+                        disabled={isParsingPdf}
+                      />
+                    </label>
+                  </div>
                   <div className="text-xs text-muted-foreground bg-secondary/20 rounded-xl p-4 space-y-1.5">
-                    <p className="font-semibold text-foreground">Columnas esperadas:</p>
+                    <p className="font-semibold text-foreground">CSV — columnas esperadas:</p>
                     <p><strong>nombre</strong> (obligatoria) — descripcion, precio, categoria (opcionales)</p>
-                    <p>Si solo tienes los nombres, la IA puede generar el resto: descripción, categoría y precio sugerido.</p>
+                    <p className="pt-1"><strong>PDF</strong> — sube tu menú o catálogo tal cual; la IA lee el documento y extrae los productos, precios y categorías automáticamente.</p>
+                    <p>En ambos casos, si falta algún dato la IA puede completarlo: descripción, categoría y precio sugerido.</p>
                   </div>
                 </>
               ) : (
