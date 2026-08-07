@@ -54,10 +54,10 @@ function CategoryCircle({
   return (
     <button
       onClick={() => onSelect(id)}
-      className="flex flex-col items-center gap-2 shrink-0 w-[66px] bg-transparent border-0 cursor-pointer p-0"
+      className="flex flex-col items-center gap-2 shrink-0 w-[76px] bg-transparent border-0 cursor-pointer p-0"
     >
       <div
-        className="w-[66px] h-[66px] rounded-full overflow-hidden transition-all duration-300"
+        className="w-[76px] h-[76px] rounded-full overflow-hidden transition-all duration-300"
         style={{
           boxShadow: active ? `0 0 0 2px ${primaryColor}, 0 0 0 5px ${tokens.fade}` : "none",
           opacity: active ? 1 : 0.72,
@@ -230,7 +230,7 @@ export function ProductCatalog({
     <div className="py-6">
       {/* Categorías en círculo + buscador */}
       <div className="flex items-center gap-3">
-        <div className="flex gap-[18px] overflow-x-auto pb-1 -mx-1 px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="flex gap-[18px] overflow-x-auto pt-2.5 pb-1 -mx-1 px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <CategoryCircle
             id="all"
             label="Todos"
