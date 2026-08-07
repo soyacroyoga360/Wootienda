@@ -133,6 +133,8 @@ export default function ProductsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("all")
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false)
   const [businessId, setBusinessId] = useState<string | null>(null)
   const [businessPlan, setBusinessPlan] = useState("free")
   const [userId, setUserId] = useState<string | null>(null)
@@ -255,10 +257,51 @@ export default function ProductsPage() {
       if (error) throw error
 
       setProducts(products.filter((p) => p.id !== product.id))
+      setSelectedIds((prev) => {
+        if (!prev.has(product.id)) return prev
+        const next = new Set(prev)
+        next.delete(product.id)
+        return next
+      })
       toast.success("Producto eliminado correctamente")
     } catch (err) {
       console.error("Error deleting product:", err)
       toast.error("Error al eliminar el producto")
+    }
+  }
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const clearSelection = () => setSelectedIds(new Set())
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return
+    const count = selectedIds.size
+    if (!confirm(`¿Eliminar ${count} producto${count === 1 ? "" : "s"} seleccionado${count === 1 ? "" : "s"}? Esta acción no se puede deshacer.`)) {
+      return
+    }
+
+    setIsBulkDeleting(true)
+    try {
+      const ids = Array.from(selectedIds)
+      const { error } = await supabase.from("products").delete().in("id", ids)
+      if (error) throw error
+
+      setProducts((prev) => prev.filter((p) => !selectedIds.has(p.id)))
+      toast.success(`${ids.length} producto${ids.length === 1 ? "" : "s"} eliminado${ids.length === 1 ? "" : "s"}`)
+      setSelectedIds(new Set())
+    } catch (err) {
+      console.error("Error bulk deleting products:", err)
+      toast.error("Error al eliminar los productos seleccionados")
+    } finally {
+      setIsBulkDeleting(false)
     }
   }
 
@@ -682,6 +725,33 @@ export default function ProductsPage() {
         </div>
       </div>
 
+      {/* Bulk actions bar */}
+      {selectedIds.size > 0 && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 p-3 pl-4 rounded-xl bg-primary/5 border border-primary/20">
+          <p className="text-sm font-semibold">
+            {selectedIds.size} producto{selectedIds.size === 1 ? "" : "s"} seleccionado{selectedIds.size === 1 ? "" : "s"}
+          </p>
+          <div className="flex items-center gap-2">
+            {selectedIds.size < filteredProducts.length && (
+              <button
+                type="button"
+                onClick={() => setSelectedIds(new Set(filteredProducts.map((p) => p.id)))}
+                className="text-xs font-semibold text-muted-foreground hover:text-foreground px-2"
+              >
+                Seleccionar los {filteredProducts.length}
+              </button>
+            )}
+            <Button variant="outline" size="sm" onClick={clearSelection} disabled={isBulkDeleting}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" size="sm" onClick={handleBulkDelete} disabled={isBulkDeleting}>
+              {isBulkDeleting ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
+              Eliminar seleccionados
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Loading state */}
       {isLoading && (
         <div className="flex flex-col items-center justify-center py-20 gap-3">
@@ -772,6 +842,20 @@ export default function ProductsPage() {
                     </span>
                   )}
                 </div>
+
+                {/* Selection checkbox */}
+                <button
+                  type="button"
+                  onClick={() => toggleSelect(product.id)}
+                  className={`absolute top-3 right-3 size-6 rounded-full border-2 flex items-center justify-center transition-colors cursor-pointer ${
+                    selectedIds.has(product.id)
+                      ? "bg-primary border-primary"
+                      : "bg-white/70 border-white backdrop-blur-sm hover:bg-white"
+                  }`}
+                  aria-label={selectedIds.has(product.id) ? "Deseleccionar producto" : "Seleccionar producto"}
+                >
+                  {selectedIds.has(product.id) && <Check className="size-3.5 text-white" strokeWidth={3} />}
+                </button>
               </div>
 
               {/* Product Info */}
