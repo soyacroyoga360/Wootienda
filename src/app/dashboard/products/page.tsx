@@ -1,10 +1,12 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import Papa from "papaparse"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { BusinessUpgradeModal } from "@/components/dashboard/business-upgrade-modal"
 import { toast } from "sonner"
 import {
   Package,
@@ -21,6 +23,12 @@ import {
   Trash2,
   Eye,
   Sparkles,
+  Wand2,
+  FileSpreadsheet,
+  UploadCloud,
+  CircleAlert,
+  CheckCircle2,
+  Crown,
   PackageOpen,
   X,
   Loader2,
@@ -53,6 +61,61 @@ const PRESET_IMAGES = [
   { url: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?q=80&w=600", label: "Pizza" }
 ]
 
+const MAX_CSV_ROWS = 40
+// Stay well clear of the Gemini free-tier RPM ceiling between per-row AI calls.
+const AI_ROW_DELAY_MS = 2500
+
+interface CsvRow {
+  name: string
+  description: string
+  category: string
+  price: number | null
+}
+
+interface ImportRowStatus {
+  status: "pending" | "working" | "done" | "error"
+  message?: string
+}
+
+function normalizeHeader(h: string): string {
+  return h
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+}
+
+function parseCsvFile(file: File): Promise<CsvRow[]> {
+  return new Promise((resolve, reject) => {
+    Papa.parse<Record<string, string>>(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: (results) => {
+        const rows: CsvRow[] = []
+        for (const raw of results.data) {
+          const entry: Record<string, string> = {}
+          for (const [key, value] of Object.entries(raw)) {
+            entry[normalizeHeader(key)] = typeof value === "string" ? value.trim() : ""
+          }
+          const name = entry["nombre"] || entry["name"] || entry["producto"] || ""
+          if (!name) continue
+          const description = entry["descripcion"] || entry["description"] || ""
+          const category = entry["categoria"] || entry["category"] || ""
+          const priceRaw = entry["precio"] || entry["price"] || ""
+          // Prices in this app are whole pesos — strip everything but digits so
+          // "$15.000" / "15,000" (thousands separators) don't get parsed as 15.
+          const priceNum = priceRaw ? Number(priceRaw.replace(/[^0-9]/g, "")) : NaN
+          rows.push({ name, description, category, price: Number.isFinite(priceNum) && priceNum > 0 ? priceNum : null })
+        }
+        resolve(rows)
+      },
+      error: (err: Error) => reject(err),
+    })
+  })
+}
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
 export default function ProductsPage() {
   const supabase = createClient()
   const [products, setProducts] = useState<Product[]>([])
@@ -60,12 +123,14 @@ export default function ProductsPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("all")
   const [businessId, setBusinessId] = useState<string | null>(null)
-  
+  const [businessPlan, setBusinessPlan] = useState("free")
+  const isBusinessPlan = businessPlan === "business"
+
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
-  
+
   // Form states
   const [formName, setFormName] = useState("")
   const [formDescription, setFormDescription] = useState("")
@@ -75,6 +140,35 @@ export default function ProductsPage() {
   const [formImageUrl, setFormImageUrl] = useState("")
   const [formIsActive, setFormIsActive] = useState(true)
   const [formIsFeatured, setFormIsFeatured] = useState(false)
+
+  // AI generation states
+  const [isGeneratingText, setIsGeneratingText] = useState(false)
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false)
+  const [isUpgradeOpen, setIsUpgradeOpen] = useState(false)
+  const [upgradeFeature, setUpgradeFeature] = useState("")
+
+  // CSV import states
+  const [isCsvModalOpen, setIsCsvModalOpen] = useState(false)
+  const [csvFileName, setCsvFileName] = useState("")
+  const [csvRows, setCsvRows] = useState<CsvRow[]>([])
+  const [csvGenerateDescriptions, setCsvGenerateDescriptions] = useState(true)
+  const [csvGenerateImages, setCsvGenerateImages] = useState(false)
+  const [isImporting, setIsImporting] = useState(false)
+  const [importProgress, setImportProgress] = useState<ImportRowStatus[]>([])
+
+  const openUpgradeModal = (feature: string) => {
+    setUpgradeFeature(feature)
+    setIsUpgradeOpen(true)
+  }
+
+  const reloadProducts = async (bizId: string) => {
+    const { data: productsData } = await supabase
+      .from("products")
+      .select("*")
+      .eq("business_id", bizId)
+      .order("created_at", { ascending: false })
+    setProducts(productsData || [])
+  }
 
   // Load business & products
   useEffect(() => {
@@ -86,21 +180,14 @@ export default function ProductsPage() {
         // 1. Get business
         const { data: business } = await supabase
           .from("businesses")
-          .select("id")
+          .select("id, plan")
           .eq("user_id", user.id)
           .maybeSingle()
 
         if (business) {
           setBusinessId(business.id)
-          
-          // 2. Get products
-          const { data: productsData } = await supabase
-            .from("products")
-            .select("*")
-            .eq("business_id", business.id)
-            .order("created_at", { ascending: false })
-
-          setProducts(productsData || [])
+          setBusinessPlan(business.plan || "free")
+          await reloadProducts(business.id)
         }
       } catch (err) {
         console.error("Error loading products data:", err)
@@ -110,6 +197,7 @@ export default function ProductsPage() {
       }
     }
     loadData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [supabase])
 
   const openAddModal = () => {
@@ -151,7 +239,7 @@ export default function ProductsPage() {
 
       setProducts(products.filter((p) => p.id !== product.id))
       toast.success("Producto eliminado correctamente")
-    } catch (err: any) {
+    } catch (err) {
       console.error("Error deleting product:", err)
       toast.error("Error al eliminar el producto")
     }
@@ -212,33 +300,196 @@ export default function ProductsPage() {
       }
 
       setIsModalOpen(false)
-    } catch (err: any) {
+    } catch (err) {
       console.error("Error saving product:", err)
-      toast.error(`Error al guardar: ${err.message || "Intenta de nuevo."}`)
+      const message = err instanceof Error ? err.message : "Intenta de nuevo."
+      toast.error(`Error al guardar: ${message}`)
     } finally {
       setIsSaving(false)
     }
   }
 
-  // AI Generation Simulation (extremely premium look)
-  const handleAIGenerate = () => {
+  // AI: generate/improve description, category and suggested price
+  const handleAIGenerate = async () => {
     if (!formName.trim()) {
       toast.error("Escribe un nombre de producto para generar detalles con IA")
       return
     }
-    toast.promise(
-      new Promise((resolve) => setTimeout(resolve, 1500)),
-      {
-        loading: "Inteligencia artificial analizando el título...",
-        success: () => {
-          setFormDescription(`Exclusivo ${formName} elaborado artesanalmente con ingredientes seleccionados de primera calidad. Una obra de arte culinaria que combina texturas finas con un sabor inigualable y equilibrado, perfecto para compartir y deleitar tus sentidos.`);
-          setFormCategory("Especialidades");
-          if (!formPrice) setFormPrice("15000");
-          return "¡Descripción y categoría generados con éxito!";
-        },
-        error: "Error en la generación con IA"
+    if (!isBusinessPlan) {
+      openUpgradeModal("La generación de descripciones con IA")
+      return
+    }
+
+    setIsGeneratingText(true)
+    try {
+      const res = await fetch("/api/ai/generate-description", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          productName: formName.trim(),
+          existingDescription: formDescription.trim() || undefined,
+          productId: editingProduct?.id,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Error en la generación con IA")
+
+      setFormDescription(data.description)
+      setFormCategory(data.category)
+      if (!formPrice) setFormPrice(String(Math.round(data.suggestedPrice)))
+      toast.success("¡Descripción y categoría generadas con éxito!")
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Error en la generación con IA"
+      toast.error(message)
+    } finally {
+      setIsGeneratingText(false)
+    }
+  }
+
+  // AI: generate a product photo and upload it to storage
+  const handleAIGenerateImage = async () => {
+    if (!formName.trim()) {
+      toast.error("Escribe un nombre de producto para generar una imagen con IA")
+      return
+    }
+    if (!isBusinessPlan) {
+      openUpgradeModal("La generación de imágenes con IA")
+      return
+    }
+
+    setIsGeneratingImage(true)
+    try {
+      const res = await fetch("/api/ai/generate-image", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          productName: formName.trim(),
+          description: formDescription.trim() || undefined,
+          productId: editingProduct?.id,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Error generando la imagen con IA")
+
+      setFormImageUrl(data.imageUrl)
+      toast.success("¡Imagen generada con éxito!")
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Error generando la imagen con IA"
+      toast.error(message)
+    } finally {
+      setIsGeneratingImage(false)
+    }
+  }
+
+  // CSV import
+  const openCsvModal = () => {
+    if (!isBusinessPlan) {
+      openUpgradeModal("La importación de productos desde CSV")
+      return
+    }
+    setCsvFileName("")
+    setCsvRows([])
+    setImportProgress([])
+    setCsvGenerateDescriptions(true)
+    setCsvGenerateImages(false)
+    setIsCsvModalOpen(true)
+  }
+
+  const handleCsvFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = ""
+    if (!file) return
+
+    try {
+      const rows = await parseCsvFile(file)
+      if (rows.length === 0) {
+        toast.error("El CSV no tiene filas válidas. Se requiere una columna 'nombre'.")
+        return
       }
-    )
+      const truncated = rows.slice(0, MAX_CSV_ROWS)
+      if (rows.length > MAX_CSV_ROWS) {
+        toast.warning(`El CSV tiene ${rows.length} filas, se importarán solo las primeras ${MAX_CSV_ROWS}.`)
+      }
+      setCsvFileName(file.name)
+      setCsvRows(truncated)
+      setImportProgress(truncated.map(() => ({ status: "pending" })))
+    } catch (err) {
+      console.error("Error parsing CSV:", err)
+      toast.error("No se pudo leer el archivo CSV")
+    }
+  }
+
+  const handleRunImport = async () => {
+    if (!businessId || csvRows.length === 0) return
+
+    setIsImporting(true)
+    let insertedCount = 0
+
+    for (let i = 0; i < csvRows.length; i++) {
+      const row = csvRows[i]
+      setImportProgress((prev) => prev.map((p, idx) => (idx === i ? { status: "working" } : p)))
+
+      try {
+        let description = row.description
+        let category = row.category
+        let price = row.price
+        let usedAiText = false
+
+        if (csvGenerateDescriptions && (!description || !category || !price)) {
+          if (i > 0) await sleep(AI_ROW_DELAY_MS)
+          const res = await fetch("/api/ai/generate-description", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ productName: row.name, existingDescription: description || undefined }),
+          })
+          const data = await res.json()
+          if (!res.ok) throw new Error(data.error || "Error de IA generando el texto")
+          description = description || data.description
+          category = category || data.category
+          price = price ?? Math.round(data.suggestedPrice)
+          usedAiText = true
+        }
+
+        let imageUrl: string | null = null
+        if (csvGenerateImages) {
+          if (usedAiText || i > 0) await sleep(AI_ROW_DELAY_MS)
+          const res = await fetch("/api/ai/generate-image", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ productName: row.name, description: description || undefined }),
+          })
+          const data = await res.json()
+          if (!res.ok) throw new Error(data.error || "Error de IA generando la imagen")
+          imageUrl = data.imageUrl
+        }
+
+        const { error } = await supabase.from("products").insert({
+          business_id: businessId,
+          name: row.name,
+          description: description || null,
+          category: category || null,
+          price: price ?? null,
+          image_url: imageUrl,
+          is_active: true,
+          is_featured: false,
+          ai_generated_description: usedAiText,
+          ai_generated_image: csvGenerateImages,
+        })
+        if (error) throw error
+
+        insertedCount += 1
+        setImportProgress((prev) => prev.map((p, idx) => (idx === i ? { status: "done" } : p)))
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Error desconocido"
+        setImportProgress((prev) =>
+          prev.map((p, idx) => (idx === i ? { status: "error", message } : p))
+        )
+      }
+    }
+
+    await reloadProducts(businessId)
+    setIsImporting(false)
+    toast.success(`Importación completa: ${insertedCount} de ${csvRows.length} productos agregados`)
   }
 
   // Filtering
@@ -272,10 +523,17 @@ export default function ProductsPage() {
             Administra tu catálogo de productos
           </p>
         </div>
-        <Button size="lg" className="shrink-0" onClick={openAddModal}>
-          <Plus className="size-4" />
-          Agregar producto
-        </Button>
+        <div className="flex items-center gap-2 shrink-0">
+          <Button size="lg" variant="outline" onClick={openCsvModal}>
+            <FileSpreadsheet className="size-4" />
+            Importar CSV
+            {!isBusinessPlan && <Crown className="size-3.5 text-pink-500" />}
+          </Button>
+          <Button size="lg" onClick={openAddModal}>
+            <Plus className="size-4" />
+            Agregar producto
+          </Button>
+        </div>
       </div>
 
       {/* Toolbar */}
@@ -477,10 +735,16 @@ export default function ProductsPage() {
                   <button
                     type="button"
                     onClick={handleAIGenerate}
-                    className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+                    disabled={isGeneratingText}
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline disabled:opacity-60 cursor-pointer"
                   >
-                    <Sparkles className="size-3.5" />
-                    Generar detalles con IA
+                    {isGeneratingText ? (
+                      <Loader2 className="size-3.5 animate-spin" />
+                    ) : (
+                      <Sparkles className="size-3.5" />
+                    )}
+                    {isGeneratingText ? "Generando..." : "Generar detalles con IA"}
+                    {!isBusinessPlan && <Crown className="size-3 text-pink-500" />}
                   </button>
                 </div>
                 <Input
@@ -551,13 +815,34 @@ export default function ProductsPage() {
 
               {/* Image URL & Presets */}
               <div className="space-y-3">
-                <Label>Imagen del producto</Label>
+                <div className="flex items-center justify-between">
+                  <Label>Imagen del producto</Label>
+                  <button
+                    type="button"
+                    onClick={handleAIGenerateImage}
+                    disabled={isGeneratingImage}
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline disabled:opacity-60 cursor-pointer"
+                  >
+                    {isGeneratingImage ? (
+                      <Loader2 className="size-3.5 animate-spin" />
+                    ) : (
+                      <Wand2 className="size-3.5" />
+                    )}
+                    {isGeneratingImage ? "Generando..." : "Generar imagen con IA"}
+                    {!isBusinessPlan && <Crown className="size-3 text-pink-500" />}
+                  </button>
+                </div>
                 <Input
                   placeholder="Pega la URL de tu imagen externa (ej. de Unsplash)"
                   value={formImageUrl}
                   onChange={(e) => setFormImageUrl(e.target.value)}
                 />
-                
+                {formImageUrl && (
+                  <div className="relative w-full aspect-video rounded-xl overflow-hidden border border-border/60 bg-secondary/30">
+                    <Image src={formImageUrl} alt="Vista previa" fill className="object-cover" sizes="500px" />
+                  </div>
+                )}
+
                 {/* Preset image selector */}
                 <div>
                   <p className="text-xs text-muted-foreground mb-2">O selecciona una de nuestras imágenes rápidas:</p>
@@ -639,6 +924,128 @@ export default function ProductsPage() {
           </div>
         </div>
       )}
+
+      {/* CSV Import Modal */}
+      {isCsvModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="bg-card w-full max-w-2xl rounded-2xl border border-border shadow-2xl flex flex-col max-h-[90vh] animate-in fade-in-50 zoom-in-95 duration-200">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+              <h3 className="text-xl font-bold flex items-center gap-2">
+                <FileSpreadsheet className="size-5 text-primary" />
+                Importar productos desde CSV
+              </h3>
+              <button
+                onClick={() => !isImporting && setIsCsvModalOpen(false)}
+                disabled={isImporting}
+                className="p-2 text-muted-foreground hover:text-foreground rounded-xl transition-colors disabled:opacity-40"
+              >
+                <X className="size-5" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-6 space-y-5">
+              {csvRows.length === 0 ? (
+                <>
+                  <label className="flex flex-col items-center justify-center gap-3 border-2 border-dashed border-border rounded-2xl py-12 cursor-pointer hover:border-primary/50 hover:bg-secondary/20 transition-colors">
+                    <UploadCloud className="size-8 text-muted-foreground" />
+                    <span className="text-sm font-semibold">Selecciona tu archivo CSV</span>
+                    <span className="text-xs text-muted-foreground">o arrástralo aquí</span>
+                    <input type="file" accept=".csv,text/csv" className="hidden" onChange={handleCsvFileChange} />
+                  </label>
+                  <div className="text-xs text-muted-foreground bg-secondary/20 rounded-xl p-4 space-y-1.5">
+                    <p className="font-semibold text-foreground">Columnas esperadas:</p>
+                    <p><strong>nombre</strong> (obligatoria) — descripcion, precio, categoria (opcionales)</p>
+                    <p>Si solo tienes los nombres, la IA puede generar el resto: descripción, categoría y precio sugerido.</p>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium">
+                      {csvFileName} — {csvRows.length} producto{csvRows.length === 1 ? "" : "s"} detectado{csvRows.length === 1 ? "" : "s"}
+                    </p>
+                    {!isImporting && (
+                      <button
+                        type="button"
+                        onClick={() => { setCsvRows([]); setImportProgress([]) }}
+                        className="text-xs font-semibold text-muted-foreground hover:text-foreground"
+                      >
+                        Cambiar archivo
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2.5 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={csvGenerateDescriptions}
+                        onChange={(e) => setCsvGenerateDescriptions(e.target.checked)}
+                        disabled={isImporting}
+                        className="accent-primary size-4 rounded cursor-pointer"
+                      />
+                      <div>
+                        <p className="text-sm font-semibold">Completar con IA los campos faltantes</p>
+                        <p className="text-xs text-muted-foreground">Descripción, categoría y precio sugerido para filas incompletas.</p>
+                      </div>
+                    </label>
+                    <label className="flex items-center gap-2.5 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={csvGenerateImages}
+                        onChange={(e) => setCsvGenerateImages(e.target.checked)}
+                        disabled={isImporting}
+                        className="accent-primary size-4 rounded cursor-pointer"
+                      />
+                      <div>
+                        <p className="text-sm font-semibold">Generar una imagen con IA para cada producto</p>
+                        <p className="text-xs text-muted-foreground">Más lento — puede tardar varios minutos con listas grandes.</p>
+                      </div>
+                    </label>
+                  </div>
+
+                  <div className="border border-border/60 rounded-xl divide-y divide-border/50 max-h-72 overflow-y-auto">
+                    {csvRows.map((row, i) => {
+                      const status = importProgress[i]?.status || "pending"
+                      return (
+                        <div key={i} className="flex items-center gap-3 px-4 py-2.5 text-sm">
+                          <div className="shrink-0">
+                            {status === "pending" && <div className="size-4 rounded-full border-2 border-border" />}
+                            {status === "working" && <Loader2 className="size-4 animate-spin text-primary" />}
+                            {status === "done" && <CheckCircle2 className="size-4 text-emerald-500" />}
+                            {status === "error" && <CircleAlert className="size-4 text-destructive" />}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium truncate">{row.name}</p>
+                            {importProgress[i]?.status === "error" && (
+                              <p className="text-xs text-destructive">{importProgress[i]?.message}</p>
+                            )}
+                          </div>
+                          {!row.description && <span className="text-[10px] text-muted-foreground shrink-0">sin descripción</span>}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </>
+              )}
+            </div>
+
+            {csvRows.length > 0 && (
+              <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-border/50">
+                <Button variant="outline" size="lg" onClick={() => setIsCsvModalOpen(false)} disabled={isImporting}>
+                  {isImporting ? "Importando..." : "Cerrar"}
+                </Button>
+                <Button size="lg" onClick={handleRunImport} disabled={isImporting} className="min-w-[180px]">
+                  {isImporting && <Loader2 className="size-4 animate-spin" />}
+                  {isImporting ? "Importando..." : `Importar ${csvRows.length} producto${csvRows.length === 1 ? "" : "s"}`}
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      <BusinessUpgradeModal open={isUpgradeOpen} onClose={() => setIsUpgradeOpen(false)} feature={upgradeFeature} />
     </>
   )
 }

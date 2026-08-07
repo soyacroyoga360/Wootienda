@@ -8,6 +8,11 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'images.unsplash.com',
       },
+      {
+        // Supabase Storage — hosts AI-generated product images and user uploads.
+        protocol: 'https',
+        hostname: '**.supabase.co',
+      },
     ],
   },
 };
