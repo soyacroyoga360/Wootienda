@@ -12,6 +12,11 @@ FROM base AS deps
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile --dangerously-allow-all-builds
 
+FROM base AS prod-deps
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+RUN pnpm install --prod --frozen-lockfile --dangerously-allow-all-builds
+
 FROM base AS builder
 
 COPY --from=deps /app/node_modules ./node_modules
@@ -41,6 +46,13 @@ RUN addgroup --system --gid 1001 nodejs \
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+# Turbopack's standalone output tracer includes sharp's native addon but
+# drops the libvips .so it dlopen()s at runtime — confirmed via
+# ERR_DLOPEN_FAILED in production, and outputFileTracingIncludes does not
+# fix it under Turbopack. Overlay a real prod-only pnpm install instead of
+# relying on the tracer for node_modules correctness.
+COPY --from=prod-deps --chown=nextjs:nodejs /app/node_modules ./node_modules
 
 USER nextjs
 

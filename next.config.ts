@@ -2,12 +2,8 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: 'standalone',
-  // The standalone build's file tracer includes sharp's native addon but
-  // drops the libvips shared library it dlopen()s at runtime (confirmed via
-  // ERR_DLOPEN_FAILED in production on Alpine/musl) — force it in explicitly.
-  outputFileTracingIncludes: {
-    '/api/ai/generate-image': ['./node_modules/sharp/**/*', './node_modules/@img/**/*'],
-  },
+  // sharp's runtime deps are handled by a dedicated Docker stage instead
+  // (outputFileTracingIncludes did not fix it under Turbopack — see Dockerfile).
   images: {
     remotePatterns: [
       {
