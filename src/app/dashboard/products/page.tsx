@@ -64,6 +64,7 @@ const PRESET_IMAGES = [
 const MAX_CSV_ROWS = 40
 // Stay well clear of the Gemini free-tier RPM ceiling between per-row AI calls.
 const AI_ROW_DELAY_MS = 2500
+const MAX_UPLOAD_BYTES = 1024 * 1024
 
 interface CsvRow {
   name: string
@@ -124,6 +125,7 @@ export default function ProductsPage() {
   const [selectedCategory, setSelectedCategory] = useState("all")
   const [businessId, setBusinessId] = useState<string | null>(null)
   const [businessPlan, setBusinessPlan] = useState("free")
+  const [userId, setUserId] = useState<string | null>(null)
   const isBusinessPlan = businessPlan === "business"
 
   // Modal states
@@ -146,6 +148,9 @@ export default function ProductsPage() {
   const [isGeneratingImage, setIsGeneratingImage] = useState(false)
   const [isUpgradeOpen, setIsUpgradeOpen] = useState(false)
   const [upgradeFeature, setUpgradeFeature] = useState("")
+
+  // Manual image upload state
+  const [isUploadingImage, setIsUploadingImage] = useState(false)
 
   // CSV import states
   const [isCsvModalOpen, setIsCsvModalOpen] = useState(false)
@@ -176,6 +181,7 @@ export default function ProductsPage() {
       try {
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) return
+        setUserId(user.id)
 
         // 1. Get business
         const { data: business } = await supabase
@@ -378,6 +384,49 @@ export default function ProductsPage() {
       toast.error(message)
     } finally {
       setIsGeneratingImage(false)
+    }
+  }
+
+  // Manual image upload — straight to Supabase Storage, no URL pasting
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = ""
+    if (!file) return
+
+    if (!userId) {
+      toast.error("No se encontró tu sesión, recarga la página e intenta de nuevo")
+      return
+    }
+    if (!file.type.startsWith("image/")) {
+      toast.error("Selecciona un archivo de imagen válido")
+      return
+    }
+    if (file.size > MAX_UPLOAD_BYTES) {
+      toast.error("La imagen supera 1MB. Elige una más liviana o comprímela antes de subirla.")
+      return
+    }
+
+    setIsUploadingImage(true)
+    try {
+      const ext = file.name.split(".").pop()?.toLowerCase() || "jpg"
+      const path = `${userId}/products/upload-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
+
+      const { error: uploadError } = await supabase.storage
+        .from("business-assets")
+        .upload(path, file, { contentType: file.type, upsert: false })
+      if (uploadError) throw uploadError
+
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("business-assets").getPublicUrl(path)
+
+      setFormImageUrl(publicUrl)
+      toast.success("Imagen subida con éxito")
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Error al subir la imagen"
+      toast.error(message)
+    } finally {
+      setIsUploadingImage(false)
     }
   }
 
@@ -832,15 +881,35 @@ export default function ProductsPage() {
                     {!isBusinessPlan && <Crown className="size-3 text-pink-500" />}
                   </button>
                 </div>
-                <Input
-                  placeholder="Pega la URL de tu imagen externa (ej. de Unsplash)"
-                  value={formImageUrl}
-                  onChange={(e) => setFormImageUrl(e.target.value)}
-                />
-                {formImageUrl && (
+                {formImageUrl ? (
                   <div className="relative w-full aspect-video rounded-xl overflow-hidden border border-border/60 bg-secondary/30">
                     <Image src={formImageUrl} alt="Vista previa" fill className="object-cover" sizes="500px" />
+                    <button
+                      type="button"
+                      onClick={() => setFormImageUrl("")}
+                      className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 hover:bg-black/80 text-white transition-colors cursor-pointer border-0"
+                      aria-label="Quitar imagen"
+                    >
+                      <X className="size-3.5" />
+                    </button>
                   </div>
+                ) : (
+                  <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-border rounded-xl py-8 cursor-pointer hover:border-primary/50 hover:bg-secondary/20 transition-colors">
+                    {isUploadingImage ? (
+                      <Loader2 className="size-6 animate-spin text-muted-foreground" />
+                    ) : (
+                      <UploadCloud className="size-6 text-muted-foreground" />
+                    )}
+                    <span className="text-sm font-medium">{isUploadingImage ? "Subiendo..." : "Subir imagen"}</span>
+                    <span className="text-xs text-muted-foreground">JPG, PNG o WebP — máx. 1MB</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleImageUpload}
+                      disabled={isUploadingImage}
+                    />
+                  </label>
                 )}
 
                 {/* Preset image selector */}
