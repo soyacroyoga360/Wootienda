@@ -271,7 +271,7 @@ export function ProductCatalog({
 
       {/* Rejilla mixta */}
       {filtered.length > 0 ? (
-        <div className="flex flex-col gap-3.5 mt-5">
+        <div className="flex flex-col gap-3.5 mt-8">
           {rows.map((row, ri) =>
             row.kind === "featured" ? (
               <button
@@ -338,7 +338,7 @@ export function ProductCatalog({
           )}
         </div>
       ) : (
-        <div className="py-16 text-center rounded-2xl mt-5" style={{ border: `1px dashed ${tokens.border}` }}>
+        <div className="py-16 text-center rounded-2xl mt-8" style={{ border: `1px dashed ${tokens.border}` }}>
           <ShoppingBag className="size-9 mx-auto mb-3" style={{ color: tokens.muted, opacity: 0.5 }} />
           <p className="font-medium" style={{ color: tokens.muted }}>
             No se encontraron productos en esta sección.

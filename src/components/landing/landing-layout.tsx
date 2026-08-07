@@ -382,8 +382,8 @@ export function LandingLayout({ business }: LandingLayoutProps) {
           <button
             type="button"
             onClick={() => setShowSearch((s) => !s)}
-            className="absolute bottom-3 right-4 md:right-6 z-20 w-10 h-10 rounded-full bg-white shadow-lg flex items-center justify-center transition-transform hover:scale-105 cursor-pointer border-0"
-            style={{ color: "#1b1917" }}
+            className="absolute bottom-3 right-4 md:right-6 z-20 w-10 h-10 rounded-full bg-black/30 backdrop-blur-md shadow-lg border border-white/20 flex items-center justify-center transition-transform hover:scale-105 cursor-pointer"
+            style={{ color: "#ffffff" }}
             aria-label="Buscar productos"
           >
             <Search className="size-[17px]" strokeWidth={1.8} />
